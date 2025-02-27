@@ -12,9 +12,12 @@ const itemSchema = new mongoose.Schema({
     description: {
         type: String,
         required: true
-    }
-}, {timestamps: true});
-
+    },
+    urgent: { 
+        type: Boolean, 
+        default: false // ✅ Added urgent field with default value false
+    },
+}, { timestamps: true });
 
 const Item = mongoose.model("Item", itemSchema);
 
