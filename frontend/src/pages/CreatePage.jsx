@@ -1,72 +1,77 @@
-import React from 'react'
-import { useState } from 'react'
-import { Box, Button, Container, Heading, Input, useColorModeValue, useToast, VStack } from "@chakra-ui/react";
-import { useItemStore } from '../store/item';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+    Box, Button, Input, FormControl, FormLabel, VStack, Text, useToast
+} from "@chakra-ui/react";
+
 const CreatePage = () => {
-  const [item, setItem] = useState({
-    name: '',
-    description: '',
-    dateFound: new Date().toISOString()
-  })
-  const { createItem } = useItemStore();
-  const toast = useToast();
-  const handleAddItem = async () => {
-    const { success, message } = await createItem(item);
-		if (!success) {
-			toast({
-				title: "Error",
-				description: message,
-				status: "error",
-				isClosable: true,
-			});
-		} else {
-			toast({
-				title: "Success",
-				description: message,
-				status: "success",
-				isClosable: true,
-			});
-		}
-		setItem({ name: "", description: "",  dateFound: new Date().toISOString()});
-  }
-	return (
-		<Container maxW={"container.sm"}>
-			<VStack spacing={8}>
-				<Heading as={"h1"} size={"2xl"} textAlign={"center"} mb={8}>
-					Create New Product
-				</Heading>
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [dateFound, setDateFound] = useState("");
+    const [image, setImage] = useState(null);
+    const navigate = useNavigate();
+    const toast = useToast();
 
-				<Box w={"full"} bg={useColorModeValue("white", "gray.800")} p={6} rounded={"lg"} shadow={"md"}>
-					<VStack spacing={4}>
-						<Input
-							placeholder='Name'
-							name='name'
-							value={item.name}
-							onChange={(e) => setItem({ ...item, name: e.target.value })}
-						/>
-						<Input
-							placeholder='Description'
-							name='description'
-							value={item.description}
-							onChange={(e) => setItem({ ...item, description: e.target.value })}
-						/>
-						<Input
-							placeholder='Date Found'
-							name='dateFound'
-              type='date'
-							value={item.dateFound}
-							onChange={(e) => setItem({ ...item, dateFound: e.target.value })}
-						/>
+    const handleImageChange = (e) => {
+        setImage(e.target.files[0]); // Store image file
+    };
 
-						<Button colorScheme='blue' onClick={handleAddItem} w='full'>
-							Add Item
-						</Button>
-					</VStack>
-				</Box>
-			</VStack>
-		</Container>
-	);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-}
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("description", description);
+        formData.append("dateFound", dateFound);
+        if (image) formData.append("image", image); // Append image if exists
 
-export default CreatePage
+        try {
+            const response = await fetch("http://localhost:3000/api/items", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                toast({ title: "Item Created", status: "success", duration: 3000 });
+                navigate("/");
+            } else {
+                toast({ title: "Error", description: data.message, status: "error", duration: 3000 });
+            }
+        } catch (error) {
+            toast({ title: "Server Error", status: "error", duration: 3000 });
+        }
+    };
+
+    return (
+        <Box maxW="400px" mx="auto" mt="50px" p="6" boxShadow="lg" borderRadius="md">
+            <form onSubmit={handleSubmit}>
+                <VStack spacing="4">
+                    <FormControl isRequired>
+                        <FormLabel>Name</FormLabel>
+                        <Input type="text" placeholder="Enter item name" value={name} onChange={(e) => setName(e.target.value)} />
+                    </FormControl>
+
+                    <FormControl isRequired>
+                        <FormLabel>Description</FormLabel>
+                        <Input type="text" placeholder="Enter description" value={description} onChange={(e) => setDescription(e.target.value)} />
+                    </FormControl>
+
+                    <FormControl isRequired>
+                        <FormLabel>Date Found</FormLabel>
+                        <Input type="date" value={dateFound} onChange={(e) => setDateFound(e.target.value)} />
+                    </FormControl>
+
+                    <FormControl>
+                        <FormLabel>Upload Image</FormLabel>
+                        <Input type="file" accept="image/*" onChange={handleImageChange} />
+                    </FormControl>
+
+                    <Button colorScheme="blue" type="submit" width="full">Submit</Button>
+                </VStack>
+            </form>
+        </Box>
+    );
+};
+
+export default CreatePage;

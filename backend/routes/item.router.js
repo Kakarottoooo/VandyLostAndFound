@@ -1,24 +1,20 @@
 import express from "express";
-import { 
-    createItem, 
-    deleteItem, 
-    updateItem, 
-    getItems, 
-    updateItemUrgency // ✅ Added function for urgency update
-} from "../controllers/item.controller.js";
-
-import { authMiddleware } from "../middleware/authMiddleware.js"; // ✅ Import authentication middleware
+import { createItem, deleteItem, updateItem, getItems } from "../controllers/item.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js"; // ✅ Authentication middleware
+import { upload } from "../config/cloudinaryConfig.js"; // ✅ Cloudinary upload config
 
 const router = express.Router();
 
-// ✅ Protect `POST /items` (Only logged-in users can create items)
-router.post("/", authMiddleware, createItem);
+// POST → Create item (auth required) + upload image
+router.post("/", authMiddleware, upload.single("image"), createItem);
 
-router.delete("/:id", deleteItem);
-router.patch("/:id", updateItem);
+// GET → Fetch all items (no auth needed)
 router.get("/", getItems);
 
-// ✅ Route to update the "urgent" status of an item
-router.patch("/:id/urgent", authMiddleware, updateItemUrgency);
+// DELETE → Remove item (auth optional — you can add if needed)
+router.delete("/:id", deleteItem);
+
+// PATCH → Update item + optional new image upload
+router.patch("/:id", upload.single("image"), updateItem);
 
 export default router;

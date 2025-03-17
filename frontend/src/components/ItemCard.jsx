@@ -1,100 +1,78 @@
-import {
-	Box,
-	Button,
-	Heading,
-	HStack,
-	IconButton,
-	Image,
-	Input,
-	Modal,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalFooter,
-	ModalHeader,
-	ModalOverlay,
-	Text,
-	useColorModeValue,
-	useDisclosure,
-	useToast,
-	VStack,
-	Badge,  // ✅ Import Badge from Chakra UI
-  } from "@chakra-ui/react";
-  import { useState } from "react";
-  
-  const ItemCard = ({ item }) => {
-	const [isUrgent, setIsUrgent] = useState(item.urgent);
-	const toast = useToast();
-  
-	// ✅ Function to toggle urgent status
-	const toggleUrgent = async () => {
-	  try {
-		const response = await fetch(`http://localhost:5000/api/items/${item._id}/urgent`, {
-		  method: "PATCH",
-		  headers: {
-			"Content-Type": "application/json",
-		  },
-		  body: JSON.stringify({ urgent: !isUrgent }),
-		});
-  
-		if (response.ok) {
-		  setIsUrgent(!isUrgent);
-		  toast({
-			title: `Item marked as ${!isUrgent ? "URGENT" : "not urgent"}`,
-			status: "success",
-			duration: 2000,
-			isClosable: true,
-		  });
-		} else {
-		  toast({
-			title: "Failed to update urgency",
-			status: "error",
-			duration: 2000,
-			isClosable: true,
-		  });
-		}
-	  } catch (error) {
-		console.error(error);
-		toast({
-		  title: "Error updating item",
-		  status: "error",
-		  duration: 2000,
-		  isClosable: true,
-		});
-	  }
-	};
-  
-	return (
-	  <Box
-		shadow="lg"
-		rounded="lg"
-		overflow="hidden"
-		transition="all 0.3s"
-		_hover={{ transform: "translateY(-5px)", shadow: "xl" }}
-		p={4}
-	  >
-		{/* ✅ Show URGENT badge if item is marked urgent */}
-		{isUrgent && (
-		  <Badge colorScheme="red" fontSize="sm" position="absolute" top="2" right="2">
-			URGENT
-		  </Badge>
-		)}
-  
-		<Heading size="md">{item.name}</Heading>
-		<Text>{item.description}</Text>
-  
-		{/* ✅ Button to toggle "Urgent" status */}
-		<Button
-		  size="sm"
-		  mt={2}
-		  colorScheme={isUrgent ? "red" : "blue"}
-		  onClick={toggleUrgent}
-		>
-		  {isUrgent ? "Remove Urgent" : "Mark as Urgent"}
-		</Button>
-	  </Box>
-	);
+// File: frontend/src/components/ItemCard.jsx
+import { Box, Heading, Text, Image, useColorModeValue, useColorMode } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const ItemCard = ({ item }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { colorMode } = useColorMode();
+
+  const cardBg = useColorModeValue("white", "gray.700");
+  const textColor = useColorModeValue("gray.700", "white");
+
+  const handleClick = () => {
+    if (!user) {
+      navigate("/login");
+    } else {
+      navigate(`/item/${item._id}`); // Redirect to item details if authenticated
+    }
   };
-  
-  export default ItemCard;
-  
+
+  // Only compute imageUrl if item.image exists
+  const imageUrl = item.image
+    ? (item.image.startsWith("http") ? item.image : `http://localhost:3000${item.image}`)
+    : null;
+
+   // ADD THESE LOGS FOR DEBUGGING:
+  console.log("Item in ItemCard:", item);
+  console.log("Computed Image URL:", imageUrl);
+
+  return (
+    <Box
+      shadow="lg"
+      rounded="lg"
+      overflow="hidden"
+      transition="all 0.3s"
+      _hover={{ transform: "translateY(-5px)", shadow: "xl", cursor: "pointer" }}
+      onClick={handleClick}
+      p={4}
+      bg={cardBg}
+      maxW="300px"
+    >
+      {imageUrl ? (
+        <Image 
+          src={imageUrl} 
+          alt={item.name} 
+          borderRadius="md"
+          objectFit="cover"
+          w="100%"
+          h="200px"
+          mb={3}
+        />
+      ) : (
+        <Box
+          h="200px"
+          bg="gray.200"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          mb={3}
+        >
+          <Text>No Image</Text>
+        </Box>
+      )}
+      <Heading as="h3" size="md" mb={2} color={textColor}>
+        {item.name}
+      </Heading>
+      <Text fontWeight="bold" fontSize="xl" color={textColor} mb={2}>
+        {item.description}
+      </Text>
+      <Text fontWeight="bold" fontSize="lg" color={useColorModeValue("gray.500", "gray.300")}>
+        Found on {item.dateFound.substring(0, 10)}
+      </Text>
+    </Box>
+  );
+};
+
+export default ItemCard;
