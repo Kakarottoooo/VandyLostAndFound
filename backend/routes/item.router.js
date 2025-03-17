@@ -1,19 +1,20 @@
 import express from "express";
 import { createItem, deleteItem, updateItem, getItems } from "../controllers/item.controller.js";
-import { upload } from "../config/cloudinaryConfig.js"; // <-- Import the cloud-based 'upload'
+import { authMiddleware } from "../middleware/authMiddleware.js"; // ✅ Authentication middleware
+import { upload } from "../config/cloudinaryConfig.js"; // ✅ Cloudinary upload config
 
 const router = express.Router();
 
-// POST → Create item + upload image to Cloudinary
-router.post("/", upload.single("image"), createItem);
+// POST → Create item (auth required) + upload image
+router.post("/", authMiddleware, upload.single("image"), createItem);
 
-// GET → Fetch all items (no upload needed)
+// GET → Fetch all items (no auth needed)
 router.get("/", getItems);
 
-// DELETE → Remove an item (no upload needed)
+// DELETE → Remove item (auth optional — you can add if needed)
 router.delete("/:id", deleteItem);
 
-// PATCH → Update an item + upload new image to Cloudinary if provided
+// PATCH → Update item + optional new image upload
 router.patch("/:id", upload.single("image"), updateItem);
 
 export default router;

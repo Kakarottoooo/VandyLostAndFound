@@ -26,12 +26,15 @@ app.use(
   })
 );
 
-connectDB()
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB Connection Error:", err);
-    process.exit(1);
-  });
+// Connect to DB only if not testing
+if (process.env.NODE_ENV !== 'test') {
+  connectDB()
+    .then(() => console.log("✅ MongoDB Connected"))
+    .catch((err) => {
+      console.error("❌ MongoDB Connection Error:", err);
+      process.exit(1);
+    });
+}
 
 app.use("/api/items", itemRouter);
 app.use("/api/auth", authRouter);
@@ -52,6 +55,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
+}
+
+export default app;
