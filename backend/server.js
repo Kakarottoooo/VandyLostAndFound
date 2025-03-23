@@ -11,11 +11,6 @@ import { messageRouter } from "./routes/message.router.js";
 // ✅ Load environment variables from project root
 const envLoaded = dotenv.config();
 
-if (envLoaded.error) {
-  console.error("❌ ERROR: .env file not found. Make sure you have a .env file in the project root.");
-  process.exit(1);
-}
-
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
 
 if (!process.env.JWT_SECRET) {
