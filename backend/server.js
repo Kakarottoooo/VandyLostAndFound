@@ -7,8 +7,10 @@ import { authRouter } from "./routes/auth.router.js";
 import { userRouter } from "./routes/user.router.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 
+// Load environment variables
 dotenv.config();
 
+// Check JWT_SECRET existence
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
 
 if (!process.env.JWT_SECRET) {
@@ -27,7 +29,7 @@ app.use(
   })
 );
 
-// Connect to DB only if not testing
+// Connect to DB (only if not testing)
 if (process.env.NODE_ENV !== 'test') {
   connectDB()
     .then(() => console.log("✅ MongoDB Connected"))
@@ -37,24 +39,29 @@ if (process.env.NODE_ENV !== 'test') {
     });
 }
 
+// Routes
 app.use("/api/items", itemRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/uploads", express.static("uploads"));
 
+// Protected route example
 app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({ msg: "Access granted to protected route!", user: req.user });
 });
 
+// Root route
 app.get("/", (req, res) => {
   res.send("🔗 Welcome to VandyLostAndFound API");
 });
 
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
+// Start server (only if not testing)
 const PORT = process.env.PORT || 3000;
 
 if (process.env.NODE_ENV !== 'test') {
@@ -63,10 +70,5 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
+// Export app for testing
 export default app;
-
-// Start Server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});

@@ -1,5 +1,9 @@
-import { Group, InputElement } from '@chakra-ui/react'
-import * as React from 'react'
+import {
+  InputGroup as ChakraInputGroup,
+  InputLeftElement,
+  InputRightElement,
+} from '@chakra-ui/react';
+import * as React from 'react';
 
 export const InputGroup = React.forwardRef(function InputGroup(props, ref) {
   const {
@@ -11,29 +15,32 @@ export const InputGroup = React.forwardRef(function InputGroup(props, ref) {
     startOffset = '6px',
     endOffset = '6px',
     ...rest
-  } = props
+  } = props;
 
-  const child = React.Children.only(children)
+  const child = React.Children.only(children);
 
   return (
-    <Group ref={ref} {...rest}>
+    <ChakraInputGroup ref={ref} {...rest}>
       {startElement && (
-        <InputElement pointerEvents='none' {...startElementProps}>
+        <InputLeftElement pointerEvents="none" {...startElementProps}>
           {startElement}
-        </InputElement>
+        </InputLeftElement>
       )}
       {React.cloneElement(child, {
+        // Using padding-left (pl) and padding-right (pr); you can also use logical props if desired.
         ...(startElement && {
-          ps: `calc(var(--input-height) - ${startOffset})`,
+          pl: `calc(var(--input-height) - ${startOffset})`,
         }),
-        ...(endElement && { pe: `calc(var(--input-height) - ${endOffset})` }),
-        ...children.props,
+        ...(endElement && {
+          pr: `calc(var(--input-height) - ${endOffset})`,
+        }),
+        ...child.props,
       })}
       {endElement && (
-        <InputElement placement='end' {...endElementProps}>
+        <InputRightElement {...endElementProps}>
           {endElement}
-        </InputElement>
+        </InputRightElement>
       )}
-    </Group>
-  )
-})
+    </ChakraInputGroup>
+  );
+});
