@@ -9,7 +9,7 @@ import { authMiddleware } from "./middleware/authMiddleware.js";
 import { messageRouter } from "./routes/message.router.js";
 
 // ✅ Load environment variables from project root
-const envLoaded = dotenv.config();
+const envLoaded = dotenv.config({ path: "../.env" });
 
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
 
@@ -20,13 +20,27 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
-app.use(express.json());
+// ✅ Flexible CORS for both local and deployed frontend
+const allowedOrigins = [
+  "http://localhost:5173", // Vite local dev
+  "https://resplendent-moxie-a90d71.netlify.app" // Netlify site
+];
+
 app.use(
   cors({
-    origin: "https://resplendent-moxie-a90d71.netlify.app",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
+
+
+app.use(express.json());
 
 // ✅ Connect to MongoDB
 connectDB()
@@ -42,7 +56,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/messages", messageRouter);
-
 
 // ✅ Protected Route Example
 app.get("/api/protected", authMiddleware, (req, res) => {
