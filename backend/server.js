@@ -9,7 +9,7 @@ import { authMiddleware } from "./middleware/authMiddleware.js";
 import { messageRouter } from "./routes/message.router.js";
 
 // ✅ Load environment variables from project root
-const envLoaded = dotenv.config({ path: "../.env" });
+const envLoaded = dotenv.config();
 
 if (envLoaded.error) {
   console.error("❌ ERROR: .env file not found. Make sure you have a .env file in the project root.");
