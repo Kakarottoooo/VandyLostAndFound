@@ -9,7 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy load pages to reduce initial bundle size
 const HomePage = lazy(() => import('./pages/HomePage'));
-const Login = lazy(() => import('./pages/login'));
+const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Verify = lazy(() => import('./pages/VerifyEmail'));
 const Profile = lazy(() => import('./pages/Profile'));
