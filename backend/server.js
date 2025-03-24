@@ -23,7 +23,7 @@ const app = express();
 // ✅ Flexible CORS for both local and deployed frontend
 const allowedOrigins = [
   "http://localhost:5173", // Vite local dev
-  "https://resplendent-moxie-a90d71.netlify.app",// Netlify site
+  "https://vandyfind.netlify.app",// Netlify site
   "https://fluffy-fudge-c9f1af.netlify.app" // Your new Netlify site
 ];
 
