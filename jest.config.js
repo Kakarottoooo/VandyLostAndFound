@@ -1,10 +1,10 @@
-export default {
+// jest.config.js
+module.exports = {
     testEnvironment: 'jsdom',
-    moduleFileExtensions: ['js', 'jsx'],
+    setupFiles: ['<rootDir>/jest.setup.js'], // Ensure this is setupFiles
+    moduleFileExtensions: ['js', 'jsx', 'json', 'node'],
     transform: {
       '^.+\\.(js|jsx)$': 'babel-jest',
     },
-    setupFilesAfterEnv: ['@testing-library/jest-dom'],
-    testMatch: ['**/test/frontend/**/*.test.jsx'],
   };
   
