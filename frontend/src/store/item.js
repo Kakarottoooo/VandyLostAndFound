@@ -5,10 +5,10 @@ export const useItemStore = create((set, get) => ({
   searchQuery: '',
   startDate: '',
   endDate: '',
-  
+
   fetchItems: async () => {
     try {
-      const res = await fetch('http://localhost:3000/api/items');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/items`);
       const data = await res.json();
       if (res.ok && data.success) {
         set({ items: data.data });
@@ -19,11 +19,11 @@ export const useItemStore = create((set, get) => ({
       console.error('Error fetching items:', error);
     }
   },
-  
+
   setSearchQuery: (query) => set({ searchQuery: query }),
   setStartDate: (date) => set({ startDate: date }),
   setEndDate: (date) => set({ endDate: date }),
-  
+
   filteredItems: () => {
     const { items, searchQuery, startDate, endDate } = get();
     return items.filter((item) => {
