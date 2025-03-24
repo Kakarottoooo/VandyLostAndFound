@@ -13,11 +13,26 @@ export const useItemStore = create((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       
-      // Use relative URL for API calls with Netlify proxy
-      const res = await fetch('/api/items');
+      // Use relative URL with a timeout to avoid long waits if server is down
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const res = await fetch('/api/items', { 
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!res.ok) {
         throw new Error(`Server responded with status: ${res.status}`);
+      }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server did not return JSON');
       }
       
       const data = await res.json();
