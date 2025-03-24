@@ -44,7 +44,7 @@ export const ChatProvider = ({ children }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/messages/unread/count', {
+      const response = await fetch('/api/messages/unread/count', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -69,7 +69,7 @@ export const ChatProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/messages/conversations', {
+      const response = await fetch('/api/messages/conversations', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,7 +100,7 @@ export const ChatProvider = ({ children }) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/messages/${partnerId}`, {
+      const response = await fetch(`/api/messages/${partnerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -136,7 +136,7 @@ export const ChatProvider = ({ children }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/messages', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
         signal: controller.signal,
         headers: {

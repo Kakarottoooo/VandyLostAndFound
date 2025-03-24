@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUserProfile = async (token) => {
     try {
       // Updated endpoint here:
-      const res = await fetch('http://localhost:3000/api/users/profile', {
+      const res = await fetch('/api/users/profile', {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
