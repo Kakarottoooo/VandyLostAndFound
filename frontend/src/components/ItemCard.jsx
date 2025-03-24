@@ -25,7 +25,7 @@ const ItemCard = ({ item }) => {
 
   // Only compute imageUrl if item.image exists
   const imageUrl = item.image
-    ? (item.image.startsWith("http") ? item.image : `http://localhost:3000${item.image}`)
+    ? (item.image.startsWith("http") ? item.image : `/api${item.image}`)
     : null;
 
   return (

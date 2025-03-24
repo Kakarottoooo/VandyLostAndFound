@@ -1,4 +1,4 @@
-// File: frontend/src/pages/login.jsx
+// Updated Login.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 
-const Login = () => {  // Renamed to Login
+const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,8 @@ const Login = () => {  // Renamed to Login
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      // Use relative URL for the Netlify proxy
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -44,6 +45,7 @@ const Login = () => {  // Renamed to Login
           duration: 3000,
           isClosable: true,
         });
+        navigate('/'); // Redirect to homepage after successful login
       } else {
         toast({
           title: 'Error',
