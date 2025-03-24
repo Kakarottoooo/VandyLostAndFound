@@ -19,7 +19,7 @@ const MessageNotification = () => {
       
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/messages/unread/count', {
+        const response = await fetch('/api/messages/unread/count', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

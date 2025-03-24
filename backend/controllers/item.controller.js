@@ -8,8 +8,8 @@ export const createItem = async (req, res) => {
             return res.status(400).json({ success: false, message: "All fields are required" });
         }
 
-        const image = req.file ? `http://localhost:3000/uploads/${req.file.filename}` : "";
-
+        // Use a relative path or full production URL
+        const image = req.file ? `/uploads/${req.file.filename}` : "";
 
         const newItem = new Item({ name, description, dateFound: new Date(dateFound), image });
 

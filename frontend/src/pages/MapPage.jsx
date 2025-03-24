@@ -54,7 +54,7 @@ const MapPage = () => {
     const fetchItems = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/items', {
+        const response = await fetch('/api/items', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -141,7 +141,7 @@ const MapPage = () => {
   // Process image URL
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    return imageUrl.startsWith("http") ? imageUrl : `http://localhost:3000${imageUrl}`;
+    return imageUrl.startsWith("http") ? imageUrl : `/api${imageUrl}`;
   };
 
   // Prevent event propagation to the map

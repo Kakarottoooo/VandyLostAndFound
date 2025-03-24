@@ -8,8 +8,7 @@
   to = "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com/api/:splat"
   status = 200
   force = true
-
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https://res.cloudinary.com https://*.cloudinary.com https://*.googleapis.com https://*.gstatic.com https://maps.google.com; connect-src 'self' https://vandy-lost-and-found-2ff42902dec4.herokuapp.com https://res.cloudinary.com https://*.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https://res.cloudinary.com https://*.cloudinary.com https://*.googleapis.com https://*.gstatic.com https://maps.google.com; connect-src 'self' http://localhost:3000 https://vandy-lost-and-found-2ff42902dec4.herokuapp.com https://res.cloudinary.com https://*.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"

@@ -129,7 +129,7 @@ const CreatePage = () => {
       // Get the auth token from local storage
       const token = localStorage.getItem('token');
       
-      const response = await fetch("http://localhost:3000/api/items", {
+      const response = await fetch("/api/items", {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`

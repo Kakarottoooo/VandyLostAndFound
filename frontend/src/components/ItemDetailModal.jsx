@@ -56,7 +56,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
 
   // Only compute imageUrl if item.image exists
   const imageUrl = item.image
-    ? (item.image.startsWith("http") ? item.image : `http://localhost:3000${item.image}`)
+    ? (item.image.startsWith("http") ? item.image : `/api${item.image}`)
     : null;
 
   const badgeColor = item.itemType === 'found' ? 'green' : 'red';
@@ -97,7 +97,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/messages', {
+      const response = await fetch('api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
