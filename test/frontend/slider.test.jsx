@@ -1,8 +1,9 @@
+// test/frontend/slider.test.jsx
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { ChakraProvider } from '@chakra-ui/react';
 import userEvent from '@testing-library/user-event';
-import { Slider } from '../../src/components/ui/slider'; // Adjust if needed
+import { Slider } from '../../frontend/src/components/ui/slider'; // Adjusted path
 
 const renderWithChakra = (ui) => render(<ChakraProvider>{ui}</ChakraProvider>);
 
