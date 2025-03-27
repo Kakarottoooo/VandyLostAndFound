@@ -1,4 +1,4 @@
-// ItemDetailModal.jsx
+// File: /frontend/src/components/ItemDetailModal.jsx
 import React, { useState } from 'react';
 import {
   Modal,
@@ -38,7 +38,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
   if (!item) return null;
   
   // Check if the current user is the owner of the item
-  const isOwner = user && item.user === user.id;
+  const isOwner = user && item.user === user._id;
   
   // Format date
   const formatDate = (dateString) => {
@@ -130,6 +130,9 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
     
     setSendingMessage(true);
     
+    // Log the item structure to debug
+    console.log("Item data:", item);
+    
     try {
       // Log debugging information
       console.log("Item data:", item);
@@ -149,6 +152,17 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
       
       const token = localStorage.getItem('token');
       
+      // Check what property contains the recipient ID
+      // The issue might be that item.user isn't the correct property 
+      // or that it doesn't contain the MongoDB ObjectId
+      const recipientId = item.user?._id || item.user || item.userId;
+      
+      console.log("Sending message to recipient ID:", recipientId);
+      
+      if (!recipientId) {
+        throw new Error("Cannot determine recipient ID");
+      }
+      
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
@@ -156,7 +170,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          recipientId: item.user,
+          recipientId: recipientId,
           content: message,
           itemId: item._id
         })
@@ -196,6 +210,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
           }
         });
       } else {
+        console.error("Server error response:", data);
         toast({
           title: "Error",
           description: data.message || "Failed to send message",
@@ -208,7 +223,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
       console.error('Error sending message:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again later.",
+        description: error.message || "Failed to send message. Please try again later.",
         status: "error",
         duration: 3000,
         isClosable: true,

@@ -4,7 +4,8 @@ import {
   Box,
   Container,
   Heading,
-  Text
+  Text,
+  useColorModeValue
 } from '@chakra-ui/react';
 import ChatWindow from '../components/chat/ChatWindow';
 import { useAuth } from '../context/AuthContext';
@@ -51,8 +52,8 @@ const ChatPage = () => {
   
   return (
     <Container maxW="container.lg" py={8}>
-      <Heading mb={6}>Messages</Heading>
-      <Text mb={4}>
+      <Heading mb={3}>Messages</Heading>
+      <Text mb={6} color="gray.600" _dark={{ color: 'gray.400' }}>
         View and respond to messages about lost and found items.
       </Text>
       

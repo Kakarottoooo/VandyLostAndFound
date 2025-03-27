@@ -11,13 +11,13 @@ router.use(authMiddleware);
 // Get all conversations for current user
 router.get("/conversations", getConversations);
 
+// Get unread message count - this must come before the /:partnerId route
+router.get("/unread/count", getUnreadCount);
+
 // Get messages between current user and another user
 router.get("/:partnerId", getMessages);
 
 // Send a message
 router.post("/", sendMessage);
-
-// Get unread message count
-router.get("/unread/count", getUnreadCount);
 
 export { router as messageRouter };
