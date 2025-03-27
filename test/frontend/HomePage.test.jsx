@@ -4,7 +4,8 @@ import { render, screen } from "@testing-library/react";
 import HomePage from "../../frontend/src/pages/HomePage"; // Note the 'frontend' folder in the path
 import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
-import "@testing-library/jest-dom/extend-expect";
+import "@testing-library/jest-dom";
+
 
 // Mock the useItemStore hook from the store
 jest.mock("../../frontend/src/store/item", () => ({

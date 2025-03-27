@@ -1,82 +1,136 @@
-// test/frontend/HomePage.test.jsx
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import HomePage from "../../src/pages/HomePage";
-import { ChakraProvider } from "@chakra-ui/react";
-import { BrowserRouter } from "react-router-dom";
-import "@testing-library/jest-dom/extend-expect";
+import React from 'react';
+import {
+	Container,
+	SimpleGrid,
+	Text,
+	VStack,
+	Input,
+	HStack,
+	Button,
+} from "@chakra-ui/react";
+import { useEffect } from "react";
+import { useItemStore } from "../store/item"; // ✅ Ensure correct import
+import { CalendarIcon, SearchIcon } from "@chakra-ui/icons";
+import ItemCard from "../components/ItemCard";
 
-// Mock the useItemStore hook from the store
-jest.mock("../../src/store/item", () => ({
-  useItemStore: jest.fn(),
-}));
+const HomePage = () => {
+	const {
+		fetchItems,
+		searchQuery,
+		setSearchQuery,
+		startDate,
+		endDate,
+		setStartDate,
+		setEndDate,
+		items, // ✅ Get all items
+		filteredItems,
+	} = useItemStore((state) => ({
+		fetchItems: state.fetchItems,
+		searchQuery: state.searchQuery,
+		setSearchQuery: state.setSearchQuery,
+		startDate: state.startDate,
+		endDate: state.endDate,
+		setStartDate: state.setStartDate,
+		setEndDate: state.setEndDate,
+		items: state.items, // ✅ Fix: Ensure items are included
+		filteredItems: state.filteredItems,
+	}));
 
-import { useItemStore } from "../../src/store/item";
+	useEffect(() => {
+		fetchItems(); // ✅ Ensure items are fetched on load
+	}, [fetchItems]);
 
-// A helper function to wrap components with providers
-const renderWithProviders = (ui) => {
-  return render(
-    <ChakraProvider>
-      <BrowserRouter>{ui}</BrowserRouter>
-    </ChakraProvider>
-  );
+	// Helper functions to toggle input type for date fields
+	const handleFocus = (e) => {
+		e.target.type = "date";
+	};
+
+	const handleBlur = (e) => {
+		if (!e.target.value) {
+			e.target.type = "text";
+		}
+	};
+
+	return (
+		<Container maxW="container.xl" py={12}>
+			<VStack spacing={8}>
+				<Text
+					fontSize="30"
+					fontWeight="bold"
+					bgGradient="linear(to-r, cyan.400, blue.500)"
+					bgClip="text"
+					textAlign="center"
+				>
+					Current Items 🚀
+				</Text>
+
+				{/* 🔍 Search Inputs */}
+				<HStack spacing={4} width="100%" justify="center">
+					{/* Name Search Box */}
+					<HStack borderWidth="1px" borderRadius="md" width="400px" padding="2">
+						<Input
+							placeholder="Search by items e.g. Watch, Laptop"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							border="none"
+							focusBorderColor="transparent"
+						/>
+						<Button variant="solid" colorScheme="blue">
+							<SearchIcon />
+						</Button>
+					</HStack>
+
+					{/* Start Date Search Box */}
+					<HStack borderWidth="1px" borderRadius="md" width="400px" padding="2">
+						<Input
+							type={startDate ? "date" : "text"}
+							placeholder="Start Date"
+							value={startDate || ""}
+							onChange={(e) => setStartDate(e.target.value)}
+							onFocus={handleFocus}
+							onBlur={handleBlur}
+							border="none"
+							focusBorderColor="transparent"
+						/>
+						<Button variant="solid" colorScheme="blue">
+							<CalendarIcon />
+						</Button>
+					</HStack>
+
+					{/* End Date Search Box */}
+					<HStack borderWidth="1px" borderRadius="md" width="400px" padding="2">
+						<Input
+							type={endDate ? "date" : "text"}
+							placeholder="End Date"
+							value={endDate || ""}
+							onChange={(e) => setEndDate(e.target.value)}
+							onFocus={handleFocus}
+							onBlur={handleBlur}
+							border="none"
+							focusBorderColor="transparent"
+						/>
+						<Button variant="solid" colorScheme="blue">
+							<CalendarIcon />
+						</Button>
+					</HStack>
+				</HStack>
+
+				{/* Render Items */}
+				<SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={10} w="full">
+					{filteredItems().map((item) => (
+						<ItemCard key={item._id} item={item} />
+					))}
+				</SimpleGrid>
+
+				{/* Show No Items Found */}
+				{filteredItems().length === 0 && (
+					<Text fontSize="xl" textAlign="center" fontWeight="bold" color="gray.500">
+						No items found 😢
+					</Text>
+				)}
+			</VStack>
+		</Container>
+	);
 };
 
-describe("HomePage", () => {
-  const mockItems = [
-    { _id: "1", name: "Item 1", dateFound: "2022-01-01" },
-    { _id: "2", name: "Item 2", dateFound: "2022-02-01" },
-  ];
-
-  test('renders the "Current Items" heading', () => {
-    useItemStore.mockImplementation(() => ({
-      fetchItems: jest.fn(),
-      searchQuery: "",
-      setSearchQuery: jest.fn(),
-      startDate: "",
-      endDate: "",
-      setStartDate: jest.fn(),
-      setEndDate: jest.fn(),
-      items: mockItems,
-      filteredItems: () => mockItems,
-    }));
-    renderWithProviders(<HomePage />);
-    expect(screen.getByText(/Current Items/i)).toBeInTheDocument();
-  });
-
-  test("renders item cards when items are available", () => {
-    useItemStore.mockImplementation(() => ({
-      fetchItems: jest.fn(),
-      searchQuery: "",
-      setSearchQuery: jest.fn(),
-      startDate: "",
-      endDate: "",
-      setStartDate: jest.fn(),
-      setEndDate: jest.fn(),
-      items: mockItems,
-      filteredItems: () => mockItems,
-    }));
-    renderWithProviders(<HomePage />);
-    // We assume each ItemCard shows the item's name
-    expect(screen.getByText(/Item 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/Item 2/i)).toBeInTheDocument();
-  });
-
-  test('renders "No items found" message when there are no items', () => {
-    useItemStore.mockImplementation(() => ({
-      fetchItems: jest.fn(),
-      searchQuery: "",
-      setSearchQuery: jest.fn(),
-      startDate: "",
-      endDate: "",
-      setStartDate: jest.fn(),
-      setEndDate: jest.fn(),
-      items: [],
-      filteredItems: () => [],
-    }));
-    renderWithProviders(<HomePage />);
-    expect(
-      screen.getByText(/No items found/i)
-    ).toBeInTheDocument();
-  });
-});
+export default HomePage;

@@ -1,13 +1,24 @@
 // File: frontend/src/components/ItemCard.jsx
-import { Box, Heading, Text, Image, useColorModeValue, useColorMode } from "@chakra-ui/react";
+import React from 'react';
+import {
+  Box,
+  Heading,
+  Text,
+  Image,
+  useColorModeValue,
+  useColorMode,
+} from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ItemCard = ({ item }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { colorMode } = useColorMode();
 
+  // ✅ Safely get `user` from AuthContext
+  const auth = useAuth();
+  const user = auth?.user;
+
+  const { colorMode } = useColorMode();
   const cardBg = useColorModeValue("white", "gray.700");
   const textColor = useColorModeValue("gray.700", "white");
 
@@ -15,16 +26,16 @@ const ItemCard = ({ item }) => {
     if (!user) {
       navigate("/login");
     } else {
-      navigate(`/item/${item._id}`); // Redirect to item details if authenticated
+      navigate(`/item/${item._id}`);
     }
   };
 
-  // Only compute imageUrl if item.image exists
   const imageUrl = item.image
-    ? (item.image.startsWith("http") ? item.image : `http://localhost:3000${item.image}`)
+    ? item.image.startsWith("http")
+      ? item.image
+      : `http://localhost:3000${item.image}`
     : null;
 
-   // ADD THESE LOGS FOR DEBUGGING:
   console.log("Item in ItemCard:", item);
   console.log("Computed Image URL:", imageUrl);
 
@@ -41,9 +52,9 @@ const ItemCard = ({ item }) => {
       maxW="300px"
     >
       {imageUrl ? (
-        <Image 
-          src={imageUrl} 
-          alt={item.name} 
+        <Image
+          src={imageUrl}
+          alt={item.name}
           borderRadius="md"
           objectFit="cover"
           w="100%"
