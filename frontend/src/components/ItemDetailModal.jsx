@@ -63,7 +63,42 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.700', 'white');
 
-  // Handle opening contact modal
+  // Handle direct navigation to chat page
+  const handleDirectNavigation = () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to log in to contact the item owner",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate("/login");
+      return;
+    }
+    
+    // Close the detail modal
+    onClose();
+    
+    // Navigate to messages page with recipient info
+    navigate('/messages', {
+      state: {
+        recipient: {
+          _id: item.user,
+          name: item.userName || "Item Owner",
+          email: item.userEmail || "No email available"
+        },
+        item: {
+          _id: item._id,
+          name: item.name,
+          image: item.image
+        },
+        fromItemDetail: true
+      }
+    });
+  };
+
+  // Handle opening contact modal (legacy approach)
   const handleOpenContact = () => {
     if (!user) {
       toast({
@@ -80,7 +115,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
     openContact();
   };
 
-  // Handle sending a message
+  // In your handleSendMessage function in ItemDetailModal.jsx
   const handleSendMessage = async () => {
     if (!message.trim()) {
       toast({
@@ -96,8 +131,25 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
     setSendingMessage(true);
     
     try {
+      // Log debugging information
+      console.log("Item data:", item);
+      console.log("Recipient ID:", item.user);
+      
+      if (!item.user) {
+        toast({
+          title: "Error",
+          description: "Cannot determine the recipient. The item may not have an owner assigned.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        setSendingMessage(false);
+        return;
+      }
+      
       const token = localStorage.getItem('token');
-      const response = await fetch('api/messages', {
+      
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +162,10 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
         })
       });
       
+      // Log the full response for debugging
+      console.log("Response status:", response.status);
       const data = await response.json();
+      console.log("Response data:", data);
       
       if (data.success) {
         toast({
@@ -122,26 +177,24 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
         });
         setMessage('');
         closeContact();
+        onClose(); // Close the item detail modal too
         
-        // Ask if they want to navigate to messages
-        setTimeout(() => {
-          toast({
-            title: "View conversation",
-            description: "Would you like to view the full conversation?",
-            status: "info",
-            duration: 5000,
-            isClosable: true,
-            action: (
-              <Button 
-                colorScheme="blue" 
-                size="sm" 
-                onClick={() => navigate('/messages')}
-              >
-                Go to Messages
-              </Button>
-            ),
-          });
-        }, 1000);
+        // Navigate directly to chat
+        navigate('/messages', {
+          state: {
+            recipient: {
+              _id: item.user,
+              name: item.userName || "Item Owner",
+              email: item.userEmail || "No email available"
+            },
+            item: {
+              _id: item._id,
+              name: item.name,
+              image: item.image
+            },
+            fromItemDetail: true
+          }
+        });
       } else {
         toast({
           title: "Error",
@@ -306,7 +359,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
                 leftIcon={<FaComment />} 
                 colorScheme="green" 
                 mr={3} 
-                onClick={handleOpenContact}
+                onClick={handleDirectNavigation} // Changed to direct navigation
               >
                 Contact
               </Button>

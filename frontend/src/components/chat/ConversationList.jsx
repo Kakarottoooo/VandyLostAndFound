@@ -1,5 +1,5 @@
 // File: /frontend/src/components/chat/ConversationList.jsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   VStack,
@@ -12,9 +12,15 @@ import {
 } from '@chakra-ui/react';
 
 const ConversationList = ({ conversations, activeConversation, onSelectConversation }) => {
+  // Move ALL hooks to the top level - never call them conditionally or inside other functions
   const bgColor = useColorModeValue('white', 'gray.700');
   const activeBgColor = useColorModeValue('blue.50', 'blue.900');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const headerBgColor = useColorModeValue('gray.100', 'gray.800');
+  const hoverBgColor = useColorModeValue('gray.50', 'gray.600');
+  const scrollThumbColor = useColorModeValue('gray.300', 'gray.600');
+  const avatarBgColor = useColorModeValue('blue.500', 'blue.200');
+  const avatarTextColor = useColorModeValue('white', 'gray.800');
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
@@ -37,7 +43,7 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
       overflow="hidden"
       h="full"
     >
-      <Box p={3} bg={useColorModeValue('gray.100', 'gray.800')} fontWeight="bold">
+      <Box p={3} bg={headerBgColor} fontWeight="bold">
         Conversations
       </Box>
       <Divider />
@@ -54,7 +60,7 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
             width: '6px',
           },
           '&::-webkit-scrollbar-thumb': {
-            background: useColorModeValue('gray.300', 'gray.600'),
+            background: scrollThumbColor,
             borderRadius: '24px',
           },
         }}
@@ -70,7 +76,7 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
               p={3}
               cursor="pointer"
               bg={activeConversation?.partner._id === conversation.partner._id ? activeBgColor : bgColor}
-              _hover={{ bg: useColorModeValue('gray.50', 'gray.600') }}
+              _hover={{ bg: hoverBgColor }}
               onClick={() => onSelectConversation(conversation)}
               borderBottomWidth="1px"
               borderColor={borderColor}
@@ -79,8 +85,8 @@ const ConversationList = ({ conversations, activeConversation, onSelectConversat
                 <Avatar 
                   name={conversation.partner.name} 
                   size="sm" 
-                  bg={useColorModeValue('blue.500', 'blue.200')}
-                  color={useColorModeValue('white', 'gray.800')}
+                  bg={avatarBgColor}
+                  color={avatarTextColor}
                 />
                 <Box flex="1">
                   <HStack justify="space-between">

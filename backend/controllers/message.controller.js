@@ -105,10 +105,21 @@ export const sendMessage = async (req, res) => {
   try {
     const senderId = req.user.id;
     const { recipientId, content, itemId } = req.body;
+    
+    console.log("Message sending attempt:", { 
+      senderId, 
+      recipientId, 
+      content: content.substring(0, 20) + "...",
+      itemId 
+    });
 
     // Validate recipient
+    if (!recipientId) {
+      return res.status(400).json({ success: false, message: "Recipient ID is required" });
+    }
+    
     if (!mongoose.Types.ObjectId.isValid(recipientId)) {
-      return res.status(400).json({ success: false, message: "Invalid recipient ID" });
+      return res.status(400).json({ success: false, message: "Invalid recipient ID format" });
     }
 
     // Check if recipient exists

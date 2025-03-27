@@ -13,7 +13,7 @@ import {
   Divider,
   useColorModeValue
 } from '@chakra-ui/react';
-import { GoogleMap, useJsApiLoader, InfoWindow, OverlayView, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, InfoWindow, OverlayView } from '@react-google-maps/api';
 import { FaMapMarkerAlt, FaCalendarAlt, FaTag, FaBuilding } from 'react-icons/fa';
 
 const containerStyle = {
@@ -31,7 +31,7 @@ const MapPage = () => {
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [useCustomMarkers, setUseCustomMarkers] = useState(false);
+  const [forceRerender, setForceRerender] = useState(0);
   const toast = useToast();
   const mapRef = useRef(null);
   
@@ -48,7 +48,29 @@ const MapPage = () => {
 
   const onMapLoad = React.useCallback((map) => {
     mapRef.current = map;
+    
+    // Force re-render after map loads to ensure markers appear
+    setTimeout(() => {
+      setForceRerender(prev => prev + 1);
+    }, 500);
   }, []);
+
+  // Force re-render when map is idle to ensure markers appear
+  useEffect(() => {
+    if (mapRef.current && isLoaded) {
+      const listener = window.google.maps.event.addListener(
+        mapRef.current,
+        'idle',
+        () => {
+          setForceRerender(prev => prev + 1);
+        }
+      );
+      
+      return () => {
+        window.google.maps.event.removeListener(listener);
+      };
+    }
+  }, [isLoaded, mapRef.current]);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -120,10 +142,6 @@ const MapPage = () => {
     setSelectedItem(null);
   };
 
-  const toggleMarkerType = () => {
-    setUseCustomMarkers(!useCustomMarkers);
-  };
-
   // Function to format the date
   const formatDate = (dateString) => {
     try {
@@ -157,6 +175,11 @@ const MapPage = () => {
     return false;
   };
 
+  // Manually force markers to re-render
+  const refreshMarkers = () => {
+    setForceRerender(prev => prev + 1);
+  };
+
   if (loading || !isLoaded) {
     return (
       <Box 
@@ -170,6 +193,9 @@ const MapPage = () => {
     );
   }
 
+  // This is here to ensure we're using the forceRerender value (React dependency tracking)
+  console.log("Rendering map with markers, render count:", forceRerender);
+
   return (
     <Container maxW="1140px" py={6}>
       <VStack spacing={4} align="stretch" mb={6}>
@@ -178,13 +204,14 @@ const MapPage = () => {
           Browse items on the map to see where they were found or lost. 
           Click on markers for more details.
         </Text>
-        <Button onClick={toggleMarkerType} colorScheme="blue" size="sm" alignSelf="flex-start">
-          {useCustomMarkers ? "Use Standard Markers" : "Use Image Markers"}
-        </Button>
         <Text>
           Items loaded: {items.length} 
           {items.length === 0 && " (No items with valid coordinates found)"}
         </Text>
+        {/* Hidden by default, but can be uncommented if needed for troubleshooting */}
+        {/* <Button onClick={refreshMarkers} colorScheme="blue" size="sm">
+          Refresh Markers
+        </Button> */}
       </VStack>
 
       <Box borderWidth="1px" borderRadius="lg" overflow="hidden" boxShadow="md">
@@ -200,66 +227,48 @@ const MapPage = () => {
             clickableIcons: false // Prevent clicks on Google's POI icons
           }}
         >
-          {!useCustomMarkers ? (
-            // Standard Google Maps markers
-            items.map((item) => (
-              <Marker
-                key={item._id}
-                position={{
-                  lat: item.location.coordinates.lat,
-                  lng: item.location.coordinates.lng
-                }}
+          {/* Image markers for all items */}
+          {items.map((item) => (
+            <OverlayView
+              key={`${item._id}-${forceRerender}`}
+              position={{
+                lat: item.location.coordinates.lat,
+                lng: item.location.coordinates.lng
+              }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div
                 onClick={() => handleMarkerClick(item)}
-                icon={{
-                  url: item.itemType === 'lost' 
-                    ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png' 
-                    : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-                  scaledSize: isLoaded && window.google ? new window.google.maps.Size(30, 30) : null
+                style={{
+                  position: 'absolute',
+                  top: '-25px',
+                  left: '-25px',
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: `4px solid ${item.itemType === 'lost' ? '#E53E3E' : '#38A169'}`,
+                  boxShadow: '0 3px 6px rgba(0,0,0,0.3)',
+                  background: '#fff',
+                  zIndex: 10,
+                  cursor: 'pointer'
                 }}
-              />
-            ))
-          ) : (
-            // Custom image markers
-            items.map((item) => (
-              <OverlayView
-                key={item._id}
-                position={{
-                  lat: item.location.coordinates.lat,
-                  lng: item.location.coordinates.lng
-                }}
-                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
               >
-                <div
-                  onClick={() => handleMarkerClick(item)}
+                <img
+                  src={getImageUrl(item.image) || 'https://via.placeholder.com/50?text=No+Image'} 
+                  alt={item.name}
                   style={{
-                    position: 'relative',
-                    transform: 'translate(-50%, -50%)',
-                    cursor: 'pointer',
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: `3px solid ${item.itemType === 'lost' ? '#E53E3E' : '#38A169'}`,
-                    boxShadow: '0 3px 6px rgba(0,0,0,0.3)',
-                    background: '#fff'
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
                   }}
-                >
-                  <img
-                    src={getImageUrl(item.image) || 'https://via.placeholder.com/50?text=No+Image'} 
-                    alt={item.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                    onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/50?text=No+Image';
-                    }}
-                  />
-                </div>
-              </OverlayView>
-            ))
-          )}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/50?text=No+Image';
+                  }}
+                />
+              </div>
+            </OverlayView>
+          ))}
 
           {selectedItem && (
             <InfoWindow
