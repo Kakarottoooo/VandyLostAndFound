@@ -8,7 +8,7 @@ import {
 	Button,
 } from "@chakra-ui/react";
 import { useEffect } from "react";
-import { useItemStore } from "../store/item"; // ✅ Ensure correct import
+import { useItemStore } from "../store/useItemStore"; // ✅ Ensure correct import
 import { CalendarIcon, SearchIcon } from "@chakra-ui/icons";
 import ItemCard from "../components/ItemCard";
 

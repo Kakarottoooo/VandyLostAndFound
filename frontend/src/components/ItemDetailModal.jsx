@@ -50,14 +50,29 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
         day: 'numeric'
       });
     } catch (e) {
-      return dateString;
+      return dateString || "N/A";
     }
   };
 
-  // Only compute imageUrl if item.image exists
-  const imageUrl = item.image
-    ? (item.image.startsWith("http") ? item.image : `/api${item.image}`)
-    : null;
+  // Enhanced image URL handling for both Cloudinary and local paths
+  const getImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    
+    // Full URL (like Cloudinary or external source)
+    if (imageUrl.startsWith("http")) {
+      return imageUrl;
+    }
+    
+    // Local /uploads/ path
+    if (imageUrl.startsWith("/uploads")) {
+      return `/api${imageUrl}`; 
+    }
+    
+    // Cloudinary path without http
+    return imageUrl;
+  };
+
+  const imageUrl = getImageUrl(item.image);
 
   const badgeColor = item.itemType === 'found' ? 'green' : 'red';
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -300,6 +315,10 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
                   w="100%" 
                   maxH="400px" 
                   objectFit="cover"
+                  onError={(e) => {
+                    console.error("Image failed to load:", imageUrl);
+                    e.target.src = "https://via.placeholder.com/400?text=No+Image";
+                  }}
                 />
               </Box>
             )}
@@ -307,7 +326,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
             <VStack align="stretch" spacing={4}>
               <Box>
                 <Heading size="md" mb={2}>Description</Heading>
-                <Text fontSize="md">{item.description}</Text>
+                <Text fontSize="md">{item.description || "No description available"}</Text>
               </Box>
               
               <Divider />
@@ -321,7 +340,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
               <HStack>
                 <FaTag />
                 <Text fontWeight="bold">Category:</Text>
-                <Text>{item.category}</Text>
+                <Text>{item.category || "Not specified"}</Text>
               </HStack>
               
               <Divider />
@@ -355,7 +374,12 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
                   <HStack>
                     <FaMapMarkerAlt />
                     <Text fontWeight="bold">Exact Location:</Text>
-                    <Text>{item.location.coordinates.lat.toFixed(6)}, {item.location.coordinates.lng.toFixed(6)}</Text>
+                    <Text>
+                      {typeof item.location.coordinates.lat === 'number' 
+                        ? `${item.location.coordinates.lat.toFixed(6)}, ${item.location.coordinates.lng.toFixed(6)}`
+                        : 'Coordinates not available'
+                      }
+                    </Text>
                   </HStack>
                 )}
               </Box>

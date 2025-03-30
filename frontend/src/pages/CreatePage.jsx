@@ -14,7 +14,8 @@ import {
   Divider,
   Stack,
   Radio,
-  RadioGroup
+  RadioGroup,
+  Textarea
 } from "@chakra-ui/react";
 import LocationPicker from "../components/ui/LocationPicker";
 
@@ -56,6 +57,7 @@ const CreatePage = () => {
     floor: "",
     coordinates: null
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const navigate = useNavigate();
   const toast = useToast();
@@ -65,36 +67,62 @@ const CreatePage = () => {
   };
 
   const handleLocationSelect = (coordinates) => {
-    setLocation({
-      ...location,
+    setLocation(prevLocation => ({
+      ...prevLocation,
       coordinates
-    });
+    }));
   };
 
   const handleBuildingChange = (e) => {
-    setLocation({
-      ...location,
+    setLocation(prevLocation => ({
+      ...prevLocation,
       building: e.target.value,
       coordinates: null // Reset coordinates when building changes
-    });
+    }));
   };
 
   const handleRoomChange = (e) => {
-    setLocation({
-      ...location,
+    setLocation(prevLocation => ({
+      ...prevLocation,
       room: e.target.value
-    });
+    }));
   };
 
   const handleFloorChange = (e) => {
-    setLocation({
-      ...location,
+    setLocation(prevLocation => ({
+      ...prevLocation,
       floor: e.target.value
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
+    // Validation
+    if (!name.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter an item name",
+        status: "error",
+        duration: 3000
+      });
+      return;
+    }
+
+    if (!dateFound) {
+      toast({
+        title: "Date Required",
+        description: "Please select the date when the item was found/lost",
+        status: "error",
+        duration: 3000
+      });
+      return;
+    }
 
     if (!location.building) {
       toast({
@@ -116,19 +144,57 @@ const CreatePage = () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    formData.append("dateFound", dateFound);
-    formData.append("category", category);
-    formData.append("itemType", itemType);
-    formData.append("location", JSON.stringify(location));
-    if (image) formData.append("image", image); // Append image if exists
-
+    setIsSubmitting(true);
+    
     try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("dateFound", dateFound);
+      formData.append("category", category);
+      formData.append("itemType", itemType);
+      
+      // Format the location data as a clean JSON string
+      const locationData = {
+        building: location.building,
+        room: location.room || "",
+        floor: location.floor || "",
+        coordinates: location.coordinates || null
+      };
+      
+      formData.append("location", JSON.stringify(locationData));
+      
+      if (image) {
+        formData.append("image", image);
+      }
+
       // Get the auth token from local storage
       const token = localStorage.getItem('token');
       
+      if (!token) {
+        toast({ 
+          title: "Authentication Error", 
+          description: "You must be logged in to create an item",
+          status: "error", 
+          duration: 3000 
+        });
+        setIsSubmitting(false);
+        navigate("/login");
+        return;
+      }
+      
+      // Debug: log what we're sending
+      console.log("Submitting item with data:", {
+        name,
+        description,
+        dateFound,
+        category,
+        itemType,
+        location: locationData,
+        hasImage: !!image
+      });
+      
+      // Create the item
       const response = await fetch("/api/items", {
         method: "POST",
         headers: {
@@ -137,10 +203,21 @@ const CreatePage = () => {
         body: formData,
       });
 
-      const data = await response.json();
-      console.log("Server response:", data);
+      // Get response as text first for debugging
+      const responseText = await response.text();
+      console.log("Raw server response:", responseText);
       
-      if (response.ok) {
+      // Try to parse the response as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (err) {
+        console.error("Error parsing response:", err);
+        throw new Error("Could not parse server response");
+      }
+
+      // Check if the request was successful
+      if (response.ok && data.success) {
         toast({ 
           title: "Item Created", 
           description: "Your item has been successfully created",
@@ -149,21 +226,18 @@ const CreatePage = () => {
         });
         navigate("/");
       } else {
-        toast({ 
-          title: "Error", 
-          description: data.message || "Failed to create item", 
-          status: "error", 
-          duration: 3000 
-        });
+        throw new Error(data.message || "Failed to create item");
       }
     } catch (error) {
       console.error("Error creating item:", error);
       toast({ 
         title: "Server Error", 
-        description: "Failed to connect to the server. Please try again later.",
+        description: error.message || "Failed to connect to the server. Please try again later.",
         status: "error", 
         duration: 3000 
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -197,11 +271,11 @@ const CreatePage = () => {
 
           <FormControl isRequired>
             <FormLabel>Description</FormLabel>
-            <Input
-              type="text"
+            <Textarea
               placeholder="Enter description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              rows={3}
             />
           </FormControl>
 
@@ -218,11 +292,12 @@ const CreatePage = () => {
           </FormControl>
 
           <FormControl isRequired>
-            <FormLabel>Date Found</FormLabel>
+            <FormLabel>Date {itemType === 'lost' ? 'Lost' : 'Found'}</FormLabel>
             <Input
               type="date"
               value={dateFound}
               onChange={(e) => setDateFound(e.target.value)}
+              max={new Date().toISOString().split('T')[0]} // Prevent future dates
             />
           </FormControl>
 
@@ -247,7 +322,7 @@ const CreatePage = () => {
               <FormLabel>Room Number</FormLabel>
               <Input
                 placeholder="e.g. 205"
-                value={location.room}
+                value={location.room || ""}
                 onChange={handleRoomChange}
               />
             </FormControl>
@@ -256,7 +331,7 @@ const CreatePage = () => {
               <FormLabel>Floor</FormLabel>
               <Input
                 placeholder="e.g. 2"
-                value={location.floor}
+                value={location.floor || ""}
                 onChange={handleFloorChange}
               />
             </FormControl>
@@ -287,9 +362,19 @@ const CreatePage = () => {
               onChange={handleImageChange}
               p={1}
             />
+            <Text fontSize="sm" color="gray.500" mt={1}>
+              A clear image helps others identify the item
+            </Text>
           </FormControl>
 
-          <Button colorScheme="blue" type="submit" size="lg" mt={4}>
+          <Button 
+            colorScheme="blue" 
+            type="submit" 
+            size="lg" 
+            mt={4}
+            isLoading={isSubmitting}
+            loadingText="Submitting..."
+          >
             Submit
           </Button>
         </VStack>

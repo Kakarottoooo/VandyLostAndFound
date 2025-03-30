@@ -37,6 +37,8 @@ const LocationPicker = ({ onSelectLocation, selectedBuilding }) => {
   const [marker, setMarker] = useState(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
   const mapRef = useRef(null);
+  const prevBuildingRef = useRef(selectedBuilding);
+  const isFirstRender = useRef(true);
   
   // Use JsApiLoader instead of LoadScript
   const { isLoaded } = useJsApiLoader({
@@ -51,15 +53,34 @@ const LocationPicker = ({ onSelectLocation, selectedBuilding }) => {
 
   // Update map center and marker when building changes
   useEffect(() => {
+    // Skip on first render to avoid initial double callback
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevBuildingRef.current = selectedBuilding;
+      return;
+    }
+    
+    // Skip if the building hasn't actually changed
+    if (selectedBuilding === prevBuildingRef.current) {
+      return;
+    }
+    
+    // Update the previous building reference
+    prevBuildingRef.current = selectedBuilding;
+    
     if (selectedBuilding && BUILDING_COORDINATES[selectedBuilding]) {
       const buildingCoords = BUILDING_COORDINATES[selectedBuilding];
       
       // Update map center
       setMapCenter(buildingCoords);
       
-      // Always set marker at building location when building changes
+      // Set marker at building location when building changes
       setMarker(buildingCoords);
-      onSelectLocation(buildingCoords);
+      
+      // Only call the parent callback if we have valid coordinates
+      if (onSelectLocation && typeof onSelectLocation === 'function') {
+        onSelectLocation(buildingCoords);
+      }
       
       // If map is loaded, pan to the building
       if (mapRef.current) {
@@ -76,7 +97,10 @@ const LocationPicker = ({ onSelectLocation, selectedBuilding }) => {
     };
     
     setMarker(coordinates);
-    onSelectLocation(coordinates);
+    
+    if (onSelectLocation && typeof onSelectLocation === 'function') {
+      onSelectLocation(coordinates);
+    }
   };
 
   if (!isLoaded) {
@@ -124,7 +148,10 @@ const LocationPicker = ({ onSelectLocation, selectedBuilding }) => {
                 lng: e.latLng.lng()
               };
               setMarker(newCoordinates);
-              onSelectLocation(newCoordinates);
+              
+              if (onSelectLocation && typeof onSelectLocation === 'function') {
+                onSelectLocation(newCoordinates);
+              }
             }}
           />
         )}

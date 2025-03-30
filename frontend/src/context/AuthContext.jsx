@@ -46,41 +46,50 @@ export const AuthProvider = ({ children }) => {
   };
 
   const fetchUserItems = async (token) => {
-    setItemsLoading(true);
-    try {
-      // Use the existing /api/items endpoint
-      const res = await fetch('/api/items', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      });
+  setItemsLoading(true);
+  try {
+    // Add a timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const res = await fetch('/api/items', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    const data = await res.json();
+    
+    if (res.ok && data.success && user) {
+      // Filter items created by the current user
+      const userItems = data.data.filter(item => 
+        item.user && (
+          item.user === user.id || 
+          item.user._id === user.id || 
+          (typeof item.user === 'object' && item.user._id === user.id)
+        )
+      );
       
-      const data = await res.json();
-      
-      if (res.ok && data.success && user) {
-        // Filter items created by the current user
-        const userItems = data.data.filter(item => 
-          item.user && (
-            item.user === user.id || 
-            item.user._id === user.id || 
-            (typeof item.user === 'object' && item.user._id === user.id)
-          )
-        );
-        
-        setUserItems(userItems);
-        // Update user object with items for convenience
-        setUser(prev => ({
-          ...prev,
-          createdItems: userItems
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching user items:', error);
-    } finally {
-      setItemsLoading(false);
+      setUserItems(userItems);
+      // Update user object with items for convenience
+      setUser(prev => ({
+        ...prev,
+        createdItems: userItems
+      }));
     }
-  };
+  } catch (error) {
+    console.error('Error fetching user items:', error);
+    // Show a more user-friendly error in the UI
+    setUserItems([]);
+    // Maybe set an error state to show in the UI
+  } finally {
+    setItemsLoading(false);
+  }
+};
 
   // Define the login function
   const handleLogin = (token) => {
@@ -107,12 +116,14 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      token: localStorage.getItem('token'),
       login: handleLogin,  // Fixed: Use the defined handleLogin function
       logout: handleLogout, // Fixed: Use the defined handleLogout function
       loading,
       userItems,
       itemsLoading,
-      refreshUserItems
+      refreshUserItems,
+      refetchUser: fetchUserProfile
     }}>
       {children}
     </AuthContext.Provider>

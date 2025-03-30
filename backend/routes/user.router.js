@@ -11,14 +11,61 @@ router.get("/profile", authMiddleware, async (req, res) => {
       .select("-password")
       .populate("createdItems")
       .populate("followedItems");
-
+    
     if (!user) {
-      return res.status(404).json({ msg: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    res.json({ user });
+    res.json({ success: true, user });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ msg: "Server error" });
+    console.error("Error fetching profile:", err.message);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// ✅ DELETE /api/users/unfollow/:itemId - Unfollow an item
+router.delete("/unfollow/:itemId", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $pull: { followedItems: req.params.itemId } },
+      { new: true }
+    )
+      .populate("createdItems")
+      .populate("followedItems")
+      .select("-password");
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("Error unfollowing item:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// ✅ POST /api/users/follow/:itemId - Follow an item
+router.post("/follow/:itemId", authMiddleware, async (req, res) => {
+  try {
+    // Check if user is already following this item
+    const existingUser = await User.findById(req.user.id);
+    if (existingUser.followedItems.includes(req.params.itemId)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Already following this item" 
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { $addToSet: { followedItems: req.params.itemId } }, // Using $addToSet to avoid duplicates
+      { new: true }
+    )
+      .populate("createdItems")
+      .populate("followedItems")
+      .select("-password");
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error("Error following item:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 

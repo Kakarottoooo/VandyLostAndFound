@@ -1,22 +1,10 @@
 // Updated version of item.router.js
 import express from "express";
-import multer from "multer";
 import { createItem, deleteItem, updateItem, getItems, getUserItems, getItemsForMap, getItemById } from "../controllers/item.controller.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import { upload } from "../config/cloudinaryConfig.js";
 
 const router = express.Router();
-
-// Multer Storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Save images to "uploads" folder
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage });
 
 // Add a simple test route to verify the router is working
 router.get("/test", (req, res) => {

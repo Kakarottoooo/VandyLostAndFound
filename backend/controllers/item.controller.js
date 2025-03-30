@@ -1,9 +1,13 @@
-// Complete updated version of item.controller.js
+// Complete fixed version of item.controller.js
 import Item from "../models/item.model.js";
 
-// ✅ Create Item (Supports Image Upload)
+// Fixed createItem function for Cloudinary
 export const createItem = async (req, res) => {
     try {
+        console.log("==== Create Item Request ====");
+        console.log("Request body:", req.body);
+        console.log("Request file:", req.file);
+        
         const { name, description, dateFound, category, itemType, location } = req.body;
         
         if (!name || !dateFound || !description) {
@@ -15,17 +19,53 @@ export const createItem = async (req, res) => {
         if (typeof location === 'string') {
             try {
                 locationData = JSON.parse(location);
+                console.log("Parsed location data:", locationData);
             } catch (err) {
                 console.error("Error parsing location:", err);
-                locationData = {};
+                console.error("Original location value:", location);
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Invalid location format", 
+                    details: err.message 
+                });
             }
         }
 
-        // Use a relative path or full production URL
-        const image = req.file ? `/uploads/${req.file.filename}` : "";
+        // Validate locationData structure
+        if (!locationData || !locationData.building) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Location must include a building" 
+            });
+        }
+
+        // Get the image URL from Cloudinary
+        // When using multer-storage-cloudinary, the Cloudinary URL is stored in req.file.path
+        let image = "";
+        if (req.file) {
+            console.log("Image file received:", req.file);
+            image = req.file.path || "";
+            
+            // Ensure we're using the Cloudinary URL, not a local path
+            if (image && !image.includes('cloudinary.com')) {
+                console.warn("Image path does not contain cloudinary.com:", image);
+                // If not a Cloudinary URL, don't use it
+                image = "";
+            }
+            
+            console.log("Final image URL:", image);
+        }
         
-        // Include the user ID from the authenticated request
-        const newItem = new Item({
+        // Make sure req.user exists
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ 
+                success: false, 
+                message: "User not authenticated or missing ID" 
+            });
+        }
+
+        // Create the item object
+        const itemData = {
             name,
             description,
             dateFound: new Date(dateFound),
@@ -33,19 +73,103 @@ export const createItem = async (req, res) => {
             category: category || 'Other',
             itemType: itemType || 'found',
             location: locationData,
-            user: req.user.id // Add this line to set the user ID
-        });
+            user: req.user.id
+        };
         
-        await newItem.save();
-        return res.status(201).json({ success: true, data: newItem });
+        console.log("Creating new item with data:", itemData);
+        
+        // Create and save the item
+        const newItem = new Item(itemData);
+        const savedItem = await newItem.save();
+        
+        console.log("Item saved successfully:", savedItem._id);
+        return res.status(201).json({ success: true, data: savedItem });
         
     } catch (error) {
         console.error("❌ Error creating item:", error);
+        // Send more detailed error information
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message,
+            stack: process.env.NODE_ENV === 'production' ? null : error.stack
+        });
+    }
+};
+
+// Updated updateItem function for Cloudinary
+export const updateItem = async (req, res) => {
+    try {
+        console.log("==== Update Item Request ====");
+        console.log("Item ID:", req.params.id);
+        console.log("Request body:", req.body);
+        console.log("Request file:", req.file);
+        
+        const itemId = req.params.id;
+        const userId = req.user.id;
+        
+        // Find the item and check if the user is the owner
+        const item = await Item.findById(itemId);
+        
+        if (!item) {
+            return res.status(404).json({ success: false, message: "Item not found" });
+        }
+        
+        // Check if the user is the owner of the item
+        if (item.user && item.user.toString() !== userId) {
+            return res.status(403).json({ success: false, message: "You don't have permission to update this item" });
+        }
+        
+        // Process the update data
+        const updateData = { ...req.body };
+        
+        // Convert dateFound to a Date object if provided
+        if (updateData.dateFound) {
+            updateData.dateFound = new Date(updateData.dateFound);
+        }
+
+        // Handle image updates
+        if (req.file) {
+            console.log("New image file received:", req.file);
+            // When using multer-storage-cloudinary, the Cloudinary URL is in req.file.path
+            const imageUrl = req.file.path || "";
+            
+            // Ensure we're using the Cloudinary URL, not a local path
+            if (imageUrl && imageUrl.includes('cloudinary.com')) {
+                updateData.image = imageUrl;
+                console.log("Updated image URL:", imageUrl);
+            } else {
+                console.warn("Image path does not contain cloudinary.com:", imageUrl);
+                // If not a Cloudinary URL, don't update the image
+            }
+        }
+
+        // Handle location updates
+        if (updateData.location && typeof updateData.location === 'string') {
+            try {
+                updateData.location = JSON.parse(updateData.location);
+            } catch (err) {
+                console.error("Error parsing location:", err);
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Invalid location format", 
+                    details: err.message 
+                });
+            }
+        }
+
+        console.log("Update data:", updateData);
+        
+        // Update the item
+        const updatedItem = await Item.findByIdAndUpdate(itemId, updateData, { new: true });
+
+        return res.status(200).json({ success: true, message: "Item updated successfully", data: updatedItem });
+    } catch (error) {
+        console.error("❌ Error updating item:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// ✅ Delete Item with owner verification
+// Keep the rest of your controller methods as they are
 export const deleteItem = async (req, res) => {
     try {
         const itemId = req.params.id;
@@ -73,43 +197,6 @@ export const deleteItem = async (req, res) => {
     }
 };
 
-// ✅ Update Item
-export const updateItem = async (req, res) => {
-    try {
-        const itemId = req.params.id;
-        const userId = req.user.id;
-        
-        // Find the item and check if the user is the owner
-        const item = await Item.findById(itemId);
-        
-        if (!item) {
-            return res.status(404).json({ success: false, message: "Item not found" });
-        }
-        
-        // Check if the user is the owner of the item
-        if (item.user && item.user.toString() !== userId) {
-            return res.status(403).json({ success: false, message: "You don't have permission to update this item" });
-        }
-        
-        if (req.body.dateFound) {
-            req.body.dateFound = new Date(req.body.dateFound);
-        }
-
-        // If a new image is uploaded, update image URL
-        if (req.file) {
-            req.body.image = `/uploads/${req.file.filename}`;
-        }
-
-        const updatedItem = await Item.findByIdAndUpdate(itemId, req.body, { new: true });
-
-        return res.status(200).json({ success: true, message: "Item updated successfully", data: updatedItem });
-    } catch (error) {
-        console.error("❌ Error updating item:", error);
-        return res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-// ✅ Fetch All Items
 export const getItems = async (req, res) => {
     try {
         const items = await Item.find().populate('user', 'name email');
@@ -120,7 +207,6 @@ export const getItems = async (req, res) => {
     }
 };
 
-// ✅ Get user's created items
 export const getUserItems = async (req, res) => {
     try {
         // Get user ID from the authenticated request
@@ -136,7 +222,6 @@ export const getUserItems = async (req, res) => {
     }
 };
 
-// ✅ Get items for map view (simplified for map markers)
 export const getItemsForMap = async (req, res) => {
     try {
         // Only get items with location coordinates
@@ -152,7 +237,6 @@ export const getItemsForMap = async (req, res) => {
     }
 };
 
-// ✅ Get a single item by ID
 export const getItemById = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id).populate('user', 'name email');
