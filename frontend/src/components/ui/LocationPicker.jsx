@@ -6,6 +6,10 @@ import {
 } from '@chakra-ui/react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
+// Define libraries array outside component to avoid recreation on each render
+// Using only 'places' to ensure compatibility
+const libraries = ['places'];
+
 const containerStyle = {
   width: '100%',
   height: '400px',
@@ -40,10 +44,11 @@ const LocationPicker = ({ onSelectLocation, selectedBuilding }) => {
   const prevBuildingRef = useRef(selectedBuilding);
   const isFirstRender = useRef(true);
   
-  // Use JsApiLoader instead of LoadScript
+  // Use the same libraries array as MapPage to avoid conflicts
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'AIzaSyABZL_QaY_H1POpxkebX9X-Jvysi2SwbzQ'
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyABZL_QaY_H1POpxkebX9X-Jvysi2SwbzQ',
+    libraries
   });
 
   // Handle map load
