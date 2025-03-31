@@ -1,5 +1,4 @@
-// File: /frontend/src/components/ItemDetailModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -21,11 +20,13 @@ import {
   useColorModeValue,
   useDisclosure,
   Textarea,
-  useToast
+  useToast,
+  Tooltip
 } from '@chakra-ui/react';
-import { FaMapMarkerAlt, FaCalendarAlt, FaTag, FaBuilding, FaComment } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaCalendarAlt, FaTag, FaBuilding, FaComment, FaHeart, FaRegHeart } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useItemStore } from '../store/useItemStore';
 
 const ItemDetailModal = ({ isOpen, onClose, item }) => {
   const { user } = useAuth();
@@ -33,7 +34,24 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
   const toast = useToast();
   const [message, setMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const { isOpen: isContactOpen, onOpen: openContact, onClose: closeContact } = useDisclosure();
+
+  // Get functions from the combined store
+  const {
+    isItemFollowed,
+    toggleFollowStatus,
+    followedItems,
+    fetchFollowedItems
+  } = useItemStore(state => ({
+    isItemFollowed: state.isItemFollowed,
+    toggleFollowStatus: state.toggleFollowStatus,
+    followedItems: state.followedItems,
+    fetchFollowedItems: state.fetchFollowedItems
+  }));
+  
+  // Get follow status for this item
+  const isFollowing = item ? isItemFollowed(item._id) : false;
   
   if (!item) return null;
   
@@ -51,6 +69,65 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
       });
     } catch (e) {
       return dateString || "N/A";
+    }
+  };
+
+  // Fetch followed items when component mounts
+  useEffect(() => {
+    if (user && followedItems.length === 0) {
+      fetchFollowedItems();
+    }
+  }, [user, fetchFollowedItems, followedItems.length]);
+
+  // Handle follow/unfollow
+  const handleFollowToggle = async () => {
+    if (!user) {
+      toast({
+        title: "Please log in",
+        description: "You need to log in to follow items",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate("/login");
+      return;
+    }
+
+    setIsFollowingLoading(true);
+    
+    try {
+      const result = await toggleFollowStatus(item._id);
+      
+      if (result.success) {
+        toast({
+          title: isFollowing ? "Unfollowed" : "Following",
+          description: isFollowing 
+            ? "Item removed from your followed items" 
+            : "Item added to your followed items",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to update follow status",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling follow status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsFollowingLoading(false);
     }
   };
 
@@ -393,16 +470,34 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
           </ModalBody>
 
           <ModalFooter>
+            {/* Follow button for all users except the owner */}
+            {!isOwner && user && (
+              <Tooltip label={isFollowing ? "Remove from followed items" : "Add to followed items"}>
+                <Button
+                  aria-label={isFollowing ? "Unfollow" : "Follow"}
+                  onClick={handleFollowToggle}
+                  isLoading={isFollowingLoading}
+                  leftIcon={isFollowing ? <FaHeart /> : <FaRegHeart />}
+                  colorScheme={isFollowing ? "red" : "gray"}
+                  variant={isFollowing ? "solid" : "outline"}
+                  mr={3}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </Button>
+              </Tooltip>
+            )}
+            
             {!isOwner && (
               <Button 
                 leftIcon={<FaComment />} 
                 colorScheme="green" 
                 mr={3} 
-                onClick={handleDirectNavigation} // Changed to direct navigation
+                onClick={handleDirectNavigation}
               >
                 Contact
               </Button>
             )}
+            
             <Button colorScheme="blue" onClick={onClose}>
               Close
             </Button>

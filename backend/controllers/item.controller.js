@@ -1,7 +1,9 @@
-// Complete fixed version of item.controller.js
+// Updated item.controller.js with Cloudinary Visual Search
 import Item from "../models/item.model.js";
+import mongoose from "mongoose";
+import { cloudinary, addToVisualSearchIndex, getPublicIdFromUrl } from "../config/cloudinaryConfig.js";
 
-// Fixed createItem function for Cloudinary
+// Create Item function with Visual Search indexing
 export const createItem = async (req, res) => {
     try {
         console.log("==== Create Item Request ====");
@@ -47,13 +49,24 @@ export const createItem = async (req, res) => {
             image = req.file.path || "";
             
             // Ensure we're using the Cloudinary URL, not a local path
-            if (image && !image.includes('cloudinary.com')) {
+            if (image && image.includes('cloudinary.com')) {
+                console.log("Final image URL:", image);
+                
+                // Extract the public_id and add to visual search index
+                const publicId = getPublicIdFromUrl(image);
+                if (publicId) {
+                    try {
+                        await addToVisualSearchIndex(publicId);
+                    } catch (indexError) {
+                        console.error("Error adding image to visual search index:", indexError);
+                        // Continue with item creation even if indexing fails
+                    }
+                }
+            } else {
                 console.warn("Image path does not contain cloudinary.com:", image);
                 // If not a Cloudinary URL, don't use it
                 image = "";
             }
-            
-            console.log("Final image URL:", image);
         }
         
         // Make sure req.user exists
@@ -96,7 +109,7 @@ export const createItem = async (req, res) => {
     }
 };
 
-// Updated updateItem function for Cloudinary
+// Update Item function with Visual Search indexing for new images
 export const updateItem = async (req, res) => {
     try {
         console.log("==== Update Item Request ====");
@@ -137,6 +150,17 @@ export const updateItem = async (req, res) => {
             if (imageUrl && imageUrl.includes('cloudinary.com')) {
                 updateData.image = imageUrl;
                 console.log("Updated image URL:", imageUrl);
+                
+                // Extract the public_id and add to visual search index
+                const publicId = getPublicIdFromUrl(imageUrl);
+                if (publicId) {
+                    try {
+                        await addToVisualSearchIndex(publicId);
+                    } catch (indexError) {
+                        console.error("Error adding image to visual search index:", indexError);
+                        // Continue with item update even if indexing fails
+                    }
+                }
             } else {
                 console.warn("Image path does not contain cloudinary.com:", imageUrl);
                 // If not a Cloudinary URL, don't update the image
@@ -169,7 +193,7 @@ export const updateItem = async (req, res) => {
     }
 };
 
-// Keep the rest of your controller methods as they are
+// Delete Item function (unchanged)
 export const deleteItem = async (req, res) => {
     try {
         const itemId = req.params.id;
@@ -197,16 +221,137 @@ export const deleteItem = async (req, res) => {
     }
 };
 
+// Enhanced getItems function with advanced filtering
 export const getItems = async (req, res) => {
     try {
-        const items = await Item.find().populate('user', 'name email');
-        return res.status(200).json({ success: true, data: items });
+        console.log("==== Get Items with Advanced Search ====");
+        console.log("Query parameters:", req.query);
+        
+        const { 
+            search, 
+            startDate, 
+            endDate, 
+            category, 
+            itemType, 
+            location
+        } = req.query;
+        
+        // Build query filter
+        const filter = {};
+        const conditions = [];
+        
+        // Text search on name and description
+        if (search) {
+            // Create a text search across multiple fields
+            conditions.push({
+                $or: [
+                    { name: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ]
+            });
+        }
+        
+        // Date range filter
+        if (startDate || endDate) {
+            const dateFilter = {};
+            
+            if (startDate) {
+                dateFilter.$gte = new Date(startDate);
+            }
+            
+            if (endDate) {
+                // Add one day to include the end date fully
+                const endDateTime = new Date(endDate);
+                endDateTime.setDate(endDateTime.getDate() + 1);
+                dateFilter.$lte = endDateTime;
+            }
+            
+            filter.dateFound = dateFilter;
+        }
+        
+        // Category filter
+        if (category) {
+            // Handle multiple categories
+            if (Array.isArray(category)) {
+                filter.category = { $in: category };
+            } else {
+                filter.category = category;
+            }
+        }
+        
+        // Item type filter (lost/found)
+        if (itemType) {
+            filter.itemType = itemType;
+        }
+        
+        // Location filter (text search across all location fields)
+        if (location) {
+            // Search for the location text in multiple location fields
+            conditions.push({
+                $or: [
+                    { 'location.building': { $regex: location, $options: 'i' } },
+                    { 'location.room': { $regex: location, $options: 'i' } },
+                    { 'location.floor': { $regex: location, $options: 'i' } }
+                ]
+            });
+        }
+        
+        // Combine all conditions with the filter
+        if (conditions.length > 0) {
+            filter.$and = conditions;
+        }
+        
+        console.log("Applied filters:", JSON.stringify(filter, null, 2));
+        
+        // Execute the query with filters
+        const items = await Item.find(filter)
+            .populate('user', 'name email')
+            .sort({ dateFound: -1 });  // Sort by date found (newest first)
+        
+        console.log(`Found ${items.length} items matching the criteria`);
+        
+        return res.status(200).json({ 
+            success: true, 
+            count: items.length,
+            data: items 
+        });
     } catch (error) {
-        console.error("❌ Error fetching items:", error);
+        console.error("❌ Error in advanced search:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
 };
 
+// Get distinct buildings for location filter
+export const getLocations = async (req, res) => {
+    try {
+        // Get all distinct buildings
+        const buildings = await Item.distinct('location.building');
+        
+        return res.status(200).json({ 
+            success: true, 
+            data: buildings.filter(building => building) // Filter out null/empty values
+        });
+    } catch (error) {
+        console.error("❌ Error fetching locations:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get all available categories
+export const getCategories = async (req, res) => {
+    try {
+        const categories = await Item.distinct('category');
+        return res.status(200).json({ 
+            success: true, 
+            data: categories.filter(category => category) // Filter out null/empty values
+        });
+    } catch (error) {
+        console.error("❌ Error fetching categories:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get user items (unchanged)
 export const getUserItems = async (req, res) => {
     try {
         // Get user ID from the authenticated request
@@ -222,6 +367,7 @@ export const getUserItems = async (req, res) => {
     }
 };
 
+// Get items for map (unchanged)
 export const getItemsForMap = async (req, res) => {
     try {
         // Only get items with location coordinates
@@ -237,6 +383,121 @@ export const getItemsForMap = async (req, res) => {
     }
 };
 
+// Enhanced image similarity search with Cloudinary Visual Search
+export const findSimilarImages = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "No image file uploaded" 
+            });
+        }
+        
+        // Get the uploaded image URL from Cloudinary
+        const uploadedImageUrl = req.file.path;
+        
+        if (!uploadedImageUrl || !uploadedImageUrl.includes('cloudinary.com')) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid image upload. Please try again."
+            });
+        }
+        
+        // Extract the public_id from the URL
+        const publicId = getPublicIdFromUrl(uploadedImageUrl);
+        
+        if (!publicId) {
+            return res.status(400).json({
+                success: false,
+                message: "Unable to process image. Please try again."
+            });
+        }
+        
+        console.log("Finding images similar to:", publicId);
+        
+        try {
+            // Add the upload to the visual search index for future searches
+            await addToVisualSearchIndex(publicId);
+            
+            // Use Cloudinary's visual similarity search
+            // Note: This requires a paid Cloudinary plan with AI Visual Search enabled
+            const searchResult = await cloudinary.search
+                .expression(`folder:lost-and-found AND tags:visual_search`)
+                .sort_by('visual_similarity', publicId)
+                .max_results(20)
+                .execute();
+            
+            console.log("Search results:", JSON.stringify(searchResult, null, 2));
+            
+            if (!searchResult.resources || searchResult.resources.length === 0) {
+                return res.status(200).json({
+                    success: true,
+                    message: "No similar images found",
+                    count: 0,
+                    data: []
+                });
+            }
+            
+            // Extract the public IDs from the search results
+            const similarPublicIds = searchResult.resources
+                .filter(resource => resource.public_id !== publicId) // Filter out the search image
+                .map(resource => {
+                    // Extract just the filename part of the public_id
+                    const parts = resource.public_id.split('/');
+                    return parts[parts.length - 1];
+                });
+            
+            console.log("Similar public IDs:", similarPublicIds);
+            
+            if (similarPublicIds.length === 0) {
+                return res.status(200).json({
+                    success: true,
+                    message: "No similar images found",
+                    count: 0,
+                    data: []
+                });
+            }
+            
+            // Find items with similar images in the database
+            // Create regex patterns to match the public IDs in the image URLs
+            const regexPatterns = similarPublicIds.map(id => new RegExp(id));
+            
+            const similarItems = await Item.find({
+                image: { $in: regexPatterns }
+            }).populate('user', 'name email');
+            
+            console.log("Found similar items:", similarItems.length);
+            
+            return res.status(200).json({
+                success: true,
+                count: similarItems.length,
+                data: similarItems
+            });
+            
+        } catch (searchError) {
+            console.error("Error during visual search:", searchError);
+            
+            // Fallback: If visual search fails, return some items with images as fallback
+            const fallbackItems = await Item.find({
+                image: { $exists: true, $ne: "" }
+            })
+            .limit(10)
+            .populate('user', 'name email');
+            
+            return res.status(200).json({
+                success: true,
+                message: "Visual search unavailable. Showing other items with images as fallback.",
+                count: fallbackItems.length,
+                data: fallbackItems
+            });
+        }
+    } catch (error) {
+        console.error("❌ Error in image similarity search:", error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// Get item by ID (unchanged)
 export const getItemById = async (req, res) => {
     try {
         const item = await Item.findById(req.params.id).populate('user', 'name email');

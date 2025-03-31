@@ -14,6 +14,7 @@ import {
   Divider,
   HStack,
   Avatar,
+  Button,
 } from '@chakra-ui/react';
 import { FaArrowLeft } from 'react-icons/fa';
 import ConversationList from './ConversationList';
@@ -54,7 +55,8 @@ const ChatWindow = ({ initialRecipient = null, initialItem = null }) => {
   
   const handleBackToConversations = useCallback(() => {
     setShowConversations(true);
-  }, []);
+    setActiveConversation(null); // Clear active conversation when going back
+  }, [setActiveConversation]);
   
   const handleSelectConversation = useCallback((conversation) => {
     setActiveConversation(conversation);
@@ -96,10 +98,19 @@ const ChatWindow = ({ initialRecipient = null, initialItem = null }) => {
   }, [initialRecipient, fetchConversations, setActiveConversation]);
   
   useEffect(() => {
-    if (activeConversation?.partner?._id) {
+    if (activeConversation?.partner) {
       const controller = new AbortController();
       
-      fetchMessages(activeConversation.partner._id, controller.signal);
+      // Extract ID if partner is an object
+      const partnerId = typeof activeConversation.partner === 'object' ? 
+        (activeConversation.partner._id || activeConversation.partner.id) : 
+        activeConversation.partner;
+        
+      if (partnerId) {
+        fetchMessages(partnerId, controller.signal);
+      } else {
+        console.error('Invalid partner ID format');
+      }
       
       return () => controller.abort();
     }
@@ -122,7 +133,19 @@ const ChatWindow = ({ initialRecipient = null, initialItem = null }) => {
       }}
     >
       <Box p={4} bg={colors.headerBgColor}>
-        <Heading size="md">Messages</Heading>
+        <Flex justifyContent="space-between" alignItems="center">
+          <Heading size="md">Messages</Heading>
+          {!showConversations && (
+            <Button 
+              leftIcon={<FaArrowLeft />} 
+              size="sm" 
+              onClick={handleBackToConversations}
+              variant="outline"
+            >
+              Back to Conversations
+            </Button>
+          )}
+        </Flex>
       </Box>
       <Divider />
       
@@ -159,7 +182,7 @@ const ChatWindow = ({ initialRecipient = null, initialItem = null }) => {
                       size="sm"
                       variant="ghost"
                       onClick={handleBackToConversations}
-                      display={{ md: 'none' }}
+                      display={{ base: 'flex', md: 'none' }}
                       aria-label="Back to conversations"
                     />
                     <Avatar 

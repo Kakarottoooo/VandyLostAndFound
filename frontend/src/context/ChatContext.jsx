@@ -97,10 +97,19 @@ export const ChatProvider = ({ children }) => {
   const fetchMessages = useCallback(async (partnerId, signal) => {
     if (!user || !partnerId) return;
     
+    // Extract just the ID if partnerId is an object
+    const actualPartnerId = typeof partnerId === 'object' ? 
+      (partnerId._id || partnerId.id) : partnerId;
+    
+    if (!actualPartnerId) {
+      console.error('Invalid partner ID format');
+      return;
+    }
+    
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/messages/${partnerId}`, {
+      const response = await fetch(`/api/messages/${actualPartnerId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         },
@@ -131,6 +140,15 @@ export const ChatProvider = ({ children }) => {
   const sendMessage = useCallback(async (recipientId, content, itemId = null) => {
     if (!user || !recipientId || !content) return null;
     
+    // Extract just the ID if recipientId is an object
+    const actualRecipientId = typeof recipientId === 'object' ? 
+      (recipientId._id || recipientId.id) : recipientId;
+    
+    if (!actualRecipientId) {
+      console.error('Invalid recipient ID format');
+      return null;
+    }
+    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -144,7 +162,7 @@ export const ChatProvider = ({ children }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          recipientId,
+          recipientId: actualRecipientId,
           content,
           itemId
         })
@@ -165,6 +183,9 @@ export const ChatProvider = ({ children }) => {
         // Trigger conversation update
         await fetchConversations();
         return data.message;
+      } else {
+        console.error('Server returned error:', data.message);
+        return null;
       }
     } catch (error) {
       clearTimeout(timeoutId);
@@ -177,8 +198,17 @@ export const ChatProvider = ({ children }) => {
   const startItemConversation = useCallback(async (itemOwnerId, itemId, initialMessage) => {
     if (!user || !itemOwnerId || !initialMessage) return false;
     
+    // Extract just the ID if itemOwnerId is an object
+    const actualOwnerId = typeof itemOwnerId === 'object' ? 
+      (itemOwnerId._id || itemOwnerId.id) : itemOwnerId;
+      
+    if (!actualOwnerId) {
+      console.error('Invalid item owner ID format');
+      return false;
+    }
+    
     try {
-      const message = await sendMessage(itemOwnerId, initialMessage, itemId);
+      const message = await sendMessage(actualOwnerId, initialMessage, itemId);
       if (message) {
         setActiveConversation({
           partner: message.recipient,
