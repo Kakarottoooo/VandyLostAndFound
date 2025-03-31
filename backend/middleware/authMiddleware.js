@@ -1,4 +1,4 @@
-// Update your authMiddleware.js to match your token structure
+// Update your authMiddleware.js to handle token expiration
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
@@ -29,6 +29,15 @@ export const authMiddleware = (req, res, next) => {
         next();
     } catch (err) {
         console.error("Auth middleware error:", err);
+        
+        // Handle expired tokens with a specific message
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ 
+                msg: "Token expired", 
+                expired: true 
+            });
+        }
+        
         res.status(401).json({ msg: "Invalid token" });
     }
 };

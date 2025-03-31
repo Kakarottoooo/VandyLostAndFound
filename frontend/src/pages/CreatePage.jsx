@@ -18,6 +18,7 @@ import {
   Textarea
 } from "@chakra-ui/react";
 import LocationPicker from "../components/ui/LocationPicker";
+import { useAuth } from "../context/AuthContext"; // Import useAuth
 
 // Building options at Vanderbilt
 const BUILDINGS = [
@@ -61,6 +62,7 @@ const CreatePage = () => {
   
   const navigate = useNavigate();
   const toast = useToast();
+  const { refreshUserItems } = useAuth(); // Get refreshUserItems function
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]); // Store image file
@@ -218,13 +220,18 @@ const CreatePage = () => {
 
       // Check if the request was successful
       if (response.ok && data.success) {
+        // First refresh user items
+        await refreshUserItems();
+        
         toast({ 
           title: "Item Created", 
           description: "Your item has been successfully created",
           status: "success", 
           duration: 3000 
         });
-        navigate("/");
+        
+        // Then navigate to profile page - data will be fresh
+        navigate("/profile");
       } else {
         throw new Error(data.message || "Failed to create item");
       }
