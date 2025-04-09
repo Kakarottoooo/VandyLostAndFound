@@ -11,6 +11,10 @@ import { upload, cloudinary } from "./config/cloudinaryConfig.js";
 // ✅ Load environment variables from project root
 const envLoaded = dotenv.config({ path: "../.env" });
 
+// Load environment variables
+dotenv.config();
+
+// Check JWT_SECRET existence
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
 
 if (!process.env.JWT_SECRET) {
@@ -77,6 +81,12 @@ app.use((err, req, res, next) => {
 
 // ✅ Start Server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
+
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
+}
+
+// Export app for testing
+export default app;

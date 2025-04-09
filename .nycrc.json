@@ -1,0 +1,8 @@
+{
+    "extension": [".js"],
+    "include": ["backend/**/*.js"],
+    "exclude": ["test/**"],
+    "reporter": ["text", "html"],
+    "all": true
+  }
+  

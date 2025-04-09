@@ -41,6 +41,7 @@ const Login = () => {
                 body: JSON.stringify({ email, password }),
             });
 
+<<<<<<< HEAD
             const data = await response.json();
             if (response.ok) {
                 // Store token and login
@@ -87,6 +88,57 @@ const Login = () => {
                         fontSize="md"
                     />
                 </FormControl>
+=======
+      if (response.ok) {
+        contextLogin(data.token);
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back!',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: 'Error',
+          description: data.msg || 'Invalid credentials',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      toast({
+        title: 'Server Error',
+        description: 'Failed to connect to the server',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box maxW="400px" mx="auto" mt="50px" p="6" boxShadow="lg" borderRadius="md">
+      <Heading mb="4">Login</Heading>
+      <form onSubmit={handleLogin}>
+        <VStack spacing="4">
+          <FormControl isRequired>
+            <FormLabel htmlFor="email">Email</FormLabel>
+            <Input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </FormControl>
+>>>>>>> newBranch
 
                 <FormControl mb="20px">
                     <FormLabel 

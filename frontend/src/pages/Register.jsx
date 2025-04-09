@@ -43,6 +43,7 @@ const Register = () => {
         body: JSON.stringify({ name, email, password }),
       });
 
+<<<<<<< HEAD
       const data = await response.json();
 
       if (response.ok) {
@@ -77,6 +78,41 @@ const Register = () => {
       setLoading(false);
     }
   };
+=======
+            const data = await response.json();
+            if (response.ok) {
+                toast({
+                    title: "Registration Successful",
+                    description: "Thanks! We've emailed you a verification code. Be sure to check your spam folder",
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true,
+                });
+
+                
+                navigate("/verify"); // Redirect to homepage
+            } else {
+                toast({
+                    title: "Error",
+                    description:  data.errors[0].msg || "Registration failed. Email may already be in use.",
+                    status: "error",
+                    duration: 3000,
+                    isClosable: true,
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Server Error",
+                description: "Failed to connect to the server. Please try again later.",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+>>>>>>> newBranch
 
   return (
     <Box maxW="400px" mx="auto" mt="50px" p="6" boxShadow="lg" borderRadius="md">
