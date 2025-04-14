@@ -1,13 +1,17 @@
+// frontend/jest.config.js
 export default {
-  rootDir: '..',  // project root
+  rootDir: '.',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['@testing-library/jest-dom'],
-  moduleDirectories: ['frontend/node_modules', 'node_modules'],
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  moduleDirectories: ['node_modules'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
-  testMatch: ['<rootDir>/test/frontend/**/*.(test|spec).[jt]s?(x)'],
+  testMatch: [
+    '<rootDir>/../test/frontend/**/*.test.[jt]s?(x)',
+    '<rootDir>/../test/frontend/**/*.spec.[jt]s?(x)'
+  ],
 };
