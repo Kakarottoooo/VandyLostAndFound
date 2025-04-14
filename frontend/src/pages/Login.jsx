@@ -41,54 +41,6 @@ const Login = () => {
                 body: JSON.stringify({ email, password }),
             });
 
-<<<<<<< HEAD
-            const data = await response.json();
-            if (response.ok) {
-                // Store token and login
-                login(data.token, data.user);
-                navigate("/"); // Redirect to homepage
-            } else {
-                console.error("Login failed:", data.msg || "Unknown error");
-            }
-        } catch (error) {
-            console.error("Login error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <Box maxW="400px" mx="auto" mt="80px" bg={bgColor}>
-            <Heading 
-                textAlign="center" 
-                fontSize="32px" 
-                fontWeight="bold" 
-                color={headingColor} 
-                mb="24px"
-            >
-                Login
-            </Heading>
-            
-            <form onSubmit={handleLogin}>
-                <FormControl mb="16px">
-                    <FormLabel 
-                        color={labelColor} 
-                        fontSize="md" 
-                        fontWeight="normal" 
-                        mb="8px"
-                    >
-                        Email <Text as="span" color="red.500">*</Text>
-                    </FormLabel>
-                    <Input 
-                        type="email" 
-                        placeholder="Enter your Vanderbilt email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        height="45px"
-                        fontSize="md"
-                    />
-                </FormControl>
-=======
       if (response.ok) {
         contextLogin(data.token);
         toast({
@@ -138,7 +90,6 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
             />
           </FormControl>
->>>>>>> newBranch
 
                 <FormControl mb="20px">
                     <FormLabel 
@@ -185,6 +136,7 @@ const Login = () => {
                         </Link>
                     </Text>
                 </Flex>
+            </VStack>
             </form>
         </Box>
     );

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 // ItemCard.jsx
 import { useState, useRef } from "react";
 import { 
@@ -18,17 +17,6 @@ import {
   useDisclosure,
   HStack,
   useToast
-=======
-// File: frontend/src/components/ItemCard.jsx
-import React from 'react';
-import {
-  Box,
-  Heading,
-  Text,
-  Image,
-  useColorModeValue,
-  useColorMode,
->>>>>>> newBranch
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -38,9 +26,6 @@ import { useItemStore } from "../store/useItemStore";
 
 const ItemCard = ({ item }) => {
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const { user } = useAuth();
-  const { colorMode } = useColorMode();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -52,8 +37,6 @@ const ItemCard = ({ item }) => {
   
   // Get delete function from Zustand store
   const deleteItem = useItemStore(state => state.deleteItem);
-=======
->>>>>>> newBranch
 
   // ✅ Safely get `user` from AuthContext
   const auth = useAuth();
@@ -67,7 +50,6 @@ const ItemCard = ({ item }) => {
     if (!user) {
       navigate("/login");
     } else {
-<<<<<<< HEAD
       // Open modal instead of navigating
       setIsModalOpen(true);
     }
@@ -148,23 +130,11 @@ const ItemCard = ({ item }) => {
 
   // SVG data URI for fallback image
   const fallbackImageSrc = "data:image/svg+xml;charset=UTF-8,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='200' height='200' fill='%23f0f0f0'/%3E%3Ctext x='50%25' y='50%25' font-size='18' text-anchor='middle' alignment-baseline='middle' font-family='Arial, sans-serif' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E";
-=======
-      navigate(`/item/${item._id}`);
-    }
-  };
-
-  const imageUrl = item.image
-    ? item.image.startsWith("http")
-      ? item.image
-      : `http://localhost:3000${item.image}`
-    : null;
->>>>>>> newBranch
 
   console.log("Item in ItemCard:", item);
   console.log("Computed Image URL:", imageUrl);
 
   return (
-<<<<<<< HEAD
     <>
       <Box
         shadow="lg"
@@ -219,39 +189,6 @@ const ItemCard = ({ item }) => {
             {item.itemType === 'lost' ? 'Lost on ' : 'Found on '}
             {item.dateFound ? new Date(item.dateFound).toLocaleDateString() : "Unknown date"}
           </Text>
-=======
-    <Box
-      shadow="lg"
-      rounded="lg"
-      overflow="hidden"
-      transition="all 0.3s"
-      _hover={{ transform: "translateY(-5px)", shadow: "xl", cursor: "pointer" }}
-      onClick={handleClick}
-      p={4}
-      bg={cardBg}
-      maxW="300px"
-    >
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt={item.name}
-          borderRadius="md"
-          objectFit="cover"
-          w="100%"
-          h="200px"
-          mb={3}
-        />
-      ) : (
-        <Box
-          h="200px"
-          bg="gray.200"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          mb={3}
-        >
-          <Text>No Image</Text>
->>>>>>> newBranch
         </Box>
         
         {/* Action Buttons */}
