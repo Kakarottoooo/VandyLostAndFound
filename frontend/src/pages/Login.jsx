@@ -10,6 +10,7 @@ import {
   Text, 
   Link, 
   Flex,
+  VStack,
   useColorModeValue 
 } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
@@ -137,7 +138,7 @@ const Login = () => {
                     </Text>
                 </Flex>
             </VStack>
-            </form>
+        </form>
         </Box>
     );
 };
