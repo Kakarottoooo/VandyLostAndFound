@@ -12,7 +12,7 @@ import {
   Flex,
   VStack,
   useColorModeValue,
-  useToast // ✅ NEW
+  useToast
 } from "@chakra-ui/react";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,8 +21,13 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const toast = useToast(); // ✅ initialize toast
+  const toast = useToast();
   const { login: contextLogin } = useAuth();
+
+  // Determine API URL based on environment with CORRECT Heroku URL
+  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000"
+    : "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com";
 
   // Color mode values
   const bgColor = useColorModeValue('#F0F4F8', '#171923');
@@ -38,7 +43,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -69,7 +74,7 @@ const Login = () => {
       console.error('Error during login:', error);
       toast({
         title: 'Server Error',
-        description: 'Unable to connect to the server. Please try again later.',
+        description: `Unable to connect to the server at ${API_URL}. Please try again later.`,
         status: 'error',
         duration: 3000,
         isClosable: true,

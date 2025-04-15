@@ -12,10 +12,10 @@ const Verify = () => {
     const navigate = useNavigate();
     const { login } = useAuth(); // Use login function
     
-    // Determine API URL based on environment
+    // Determine API URL based on environment with CORRECT Heroku URL
     const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
         ? "http://localhost:3000"
-        : "https://vandy-lost-and-found.herokuapp.com";
+        : "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com";
     
     const handleVerify = async (e) => {
         e.preventDefault();
