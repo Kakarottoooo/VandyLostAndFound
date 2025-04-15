@@ -1,3 +1,4 @@
+// File: backend/server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -9,7 +10,6 @@ import { authMiddleware } from "./middleware/authMiddleware.js";
 import { messageRouter } from "./routes/message.router.js";
 import { upload, cloudinary } from "./config/cloudinaryConfig.js";
 dotenv.config({ path: "../.env" });
-
 
 // Check JWT_SECRET existence
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
@@ -28,6 +28,7 @@ const allowedOrigins = [
   "http://127.0.0.1:5173", // Local IP variant
   "http://127.0.0.1:5174", // Local IP variant
   "https://vandyfind.netlify.app", // Netlify site
+  "https://profile-3--vandyfind.netlify.app", // Your Netlify site
   "https://fluffy-fudge-c9f1af.netlify.app" // Your new Netlify site
 ];
 

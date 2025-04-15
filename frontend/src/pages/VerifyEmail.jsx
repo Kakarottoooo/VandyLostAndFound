@@ -12,18 +12,27 @@ const Verify = () => {
     const navigate = useNavigate();
     const { login } = useAuth(); // Use login function
     
+    // Determine API URL based on environment
+    const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? "http://localhost:3000"
+        : "https://vandy-lost-and-found.herokuapp.com";
+    
     const handleVerify = async (e) => {
         e.preventDefault();
         setLoading(true);
+        console.log("Using API URL:", API_URL);
+        
         try {
-            const response = await fetch("/api/auth/verify-email", {
+            const response = await fetch(`${API_URL}/api/auth/verify-email`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, verificationCode: code }),
+                credentials: 'include',
             });
 
+            console.log("Response status:", response.status);
             const data = await response.json();
-            console.log("Verification response:", data); // Add debugging
+            console.log("Verification response:", data);
             
             if (response.ok) {
                 toast({
@@ -45,10 +54,10 @@ const Verify = () => {
                 });
             }
         } catch (error) {
-            console.error("Verification error:", error); // Add debugging
+            console.error("Verification error:", error);
             toast({
                 title: "Server Error",
-                description: "Failed to connect to the server",
+                description: `Failed to connect to the server at ${API_URL}. Please try again later.`,
                 status: "error",
                 duration: 3000,
                 isClosable: true,

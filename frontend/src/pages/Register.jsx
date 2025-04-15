@@ -21,6 +21,11 @@ const Register = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
+  // Determine API URL based on environment
+  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3000"
+    : "https://vandy-lost-and-found.herokuapp.com";
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -39,9 +44,10 @@ const Register = () => {
 
     const requestData = { name, email, password };
     console.log("Sending registration data:", requestData);
+    console.log("Using API URL:", API_URL);
 
     try {
-      const response = await fetch("http://localhost:3000/api/auth/register", {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
@@ -63,19 +69,30 @@ const Register = () => {
                 
         navigate("/verify"); // Redirect to verification page
       } else {
-        toast({
-          title: "Registration Failed",
-          description: data.msg || (data.errors && data.errors[0]?.msg) || "Registration failed. Please try again.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
+        // Better error handling for existing user
+        if (data.msg === 'User already exists') {
+          toast({
+            title: "Account Already Exists",
+            description: "An account with this email already exists. Please login instead or use a different email.",
+            status: "warning",
+            duration: 5000,
+            isClosable: true,
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: data.msg || (data.errors && data.errors[0]?.msg) || "Registration failed. Please try again.",
+            status: "error",
+            duration: 3000,
+            isClosable: true,
+          });
+        }
       }
     } catch (error) {
       console.error("Fetch error:", error);
       toast({
         title: "Server Error",
-        description: "Failed to connect to the server. Please try again later.",
+        description: `Failed to connect to the server at ${API_URL}. Please try again later.`,
         status: "error",
         duration: 3000,
         isClosable: true,

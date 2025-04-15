@@ -17,5 +17,12 @@ export default defineConfig({
         rewrite: (path) => path
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      // This ensures the environment variables are properly processed
+      // during build time
+      external: []
+    }
   }
 });
