@@ -63,6 +63,9 @@ const MapPage = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const inputBg = useColorModeValue('white', 'gray.800');
 
+  // Data URI for placeholder image (complies with CSP)
+  const placeholderImage = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50"%3E%3Crect fill="%23cccccc" width="50" height="50"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="8" fill="%23333333"%3ENo Image%3C/text%3E%3C/svg%3E';
+
   // Use the hook instead of LoadScript component
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -188,6 +191,54 @@ const MapPage = () => {
     setMapCenter(center);
   }, []);
 
+  // Add refresh items function
+  const refreshItems = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/items`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Filter for items with valid location data
+        const itemsWithLocation = result.data.filter(item => {
+          const hasCoordinates = item.location && 
+                                item.location.coordinates && 
+                                typeof item.location.coordinates.lat === 'number' && 
+                                typeof item.location.coordinates.lng === 'number';
+          
+          return hasCoordinates;
+        });
+        
+        setItems(itemsWithLocation);
+        
+        toast({
+          title: "Map Refreshed",
+          description: `Loaded ${itemsWithLocation.length} items with location data`,
+          status: "success",
+          duration: 3000,
+          isClosable: true
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing items:', error);
+      toast({
+        title: "Error Refreshing",
+        description: "Could not refresh map items",
+        status: "error",
+        duration: 3000,
+        isClosable: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL, toast]);
+
   // Force re-render when map is idle to ensure markers appear
   useEffect(() => {
     if (mapRef.current && isLoaded) {
@@ -281,7 +332,7 @@ const MapPage = () => {
 
   // Process image URL
   const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return null;
+    if (!imageUrl) return placeholderImage;
     return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
   };
 
@@ -301,7 +352,17 @@ const MapPage = () => {
   return (
     <Container maxW="1140px" py={6}>
       <VStack spacing={4} align="stretch" mb={6}>
-        <Heading>Lost & Found Map</Heading>
+        <Flex justify="space-between" align="center">
+          <Heading>Lost & Found Map</Heading>
+          <Button 
+            onClick={refreshItems} 
+            colorScheme="blue" 
+            size="sm"
+            isLoading={loading}
+          >
+            Refresh Map
+          </Button>
+        </Flex>
         <Text>
           Browse items on the map to see where they were found or lost. 
           Click on markers for more details.
@@ -425,7 +486,7 @@ const MapPage = () => {
                 }}
               >
                 <img
-                  src={getImageUrl(item.image) || 'https://via.placeholder.com/50?text=No+Image'} 
+                  src={getImageUrl(item.image)} 
                   alt={item.name}
                   style={{
                     width: '100%',
@@ -433,7 +494,7 @@ const MapPage = () => {
                     objectFit: 'cover'
                   }}
                   onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/50?text=No+Image';
+                    e.target.src = placeholderImage;
                   }}
                 />
               </div>
