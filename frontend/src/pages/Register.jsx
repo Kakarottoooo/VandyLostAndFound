@@ -12,6 +12,7 @@ import {
   Text,
   useToast,
 } from "@chakra-ui/react";
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,46 +37,53 @@ const Register = () => {
       return;
     }
 
+    const requestData = { name, email, password };
+    console.log("Sending registration data:", requestData);
+
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("http://localhost:3000/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(requestData),
+        credentials: 'include',
       });
 
-            const data = await response.json();
-            if (response.ok) {
-                toast({
-                    title: "Registration Successful",
-                    description: "Thanks! We've emailed you a verification code. Be sure to check your spam folder",
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                });
+      console.log("Response status:", response.status);
+      const data = await response.json();
+      console.log("Registration response:", data);
 
+      if (response.ok) {
+        toast({
+          title: "Registration Successful",
+          description: "Thanks! We've emailed you a verification code. Be sure to check your spam folder",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
                 
-                navigate("/verify"); // Redirect to homepage
-            } else {
-                toast({
-                    title: "Error",
-                    description:  data.errors[0].msg || "Registration failed. Email may already be in use.",
-                    status: "error",
-                    duration: 3000,
-                    isClosable: true,
-                });
-            }
-        } catch (error) {
-            toast({
-                title: "Server Error",
-                description: "Failed to connect to the server. Please try again later.",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
+        navigate("/verify"); // Redirect to verification page
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: data.msg || (data.errors && data.errors[0]?.msg) || "Registration failed. Please try again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      toast({
+        title: "Server Error",
+        description: "Failed to connect to the server. Please try again later.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box maxW="400px" mx="auto" mt="50px" p="6" boxShadow="lg" borderRadius="md">

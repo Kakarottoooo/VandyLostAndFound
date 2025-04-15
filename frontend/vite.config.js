@@ -12,11 +12,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        // In development, use local server
-        target: process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3000'
-          : 'https://vandy-lost-and-found-2ff42902dec4.herokuapp.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
+        rewrite: (path) => path
       }
     }
   }

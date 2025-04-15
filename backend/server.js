@@ -8,11 +8,8 @@ import { userRouter } from "./routes/user.router.js";
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import { messageRouter } from "./routes/message.router.js";
 import { upload, cloudinary } from "./config/cloudinaryConfig.js";
-// ✅ Load environment variables from project root
-const envLoaded = dotenv.config({ path: "../.env" });
+dotenv.config({ path: "../.env" });
 
-// Load environment variables
-dotenv.config();
 
 // Check JWT_SECRET existence
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
@@ -27,25 +24,40 @@ const app = express();
 // ✅ Flexible CORS for both local and deployed frontend
 const allowedOrigins = [
   "http://localhost:5173", // Vite local dev
-  "https://vandyfind.netlify.app",// Netlify site
+  "http://localhost:5174", // Alternative Vite port
+  "http://127.0.0.1:5173", // Local IP variant
+  "http://127.0.0.1:5174", // Local IP variant
+  "https://vandyfind.netlify.app", // Netlify site
   "https://fluffy-fudge-c9f1af.netlify.app" // Your new Netlify site
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl requests)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        console.log("Blocked by CORS:", origin);
+        callback(null, true); // Temporarily allow all origins for debugging
+        // callback(new Error("Not allowed by CORS")); // Enable this line later
       }
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
   })
 );
 
-
+// Body parsers
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Debugging middleware for all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
+  next();
+});
 
 // ✅ Connect to MongoDB
 connectDB()
@@ -85,6 +97,8 @@ const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
+    console.log(`📂 API available at http://localhost:${PORT}/api`);
+    console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
   });
 }
 
