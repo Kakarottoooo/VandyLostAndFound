@@ -37,6 +37,11 @@ const center = {
 };
 
 const MapPage = () => {
+  // Determine API URL based on environment
+  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "/api"  // Use relative path in development
+    : "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com/api"; // Use full URL in production
+
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -204,7 +209,7 @@ const MapPage = () => {
     const fetchItems = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('/api/items', {
+        const response = await fetch(`${API_URL}/items`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -252,7 +257,7 @@ const MapPage = () => {
     };
 
     fetchItems();
-  }, [toast]);
+  }, [toast, API_URL]);
 
   const handleMarkerClick = (item) => {
     // Center the map on the selected item
@@ -277,7 +282,7 @@ const MapPage = () => {
   // Process image URL
   const getImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    return imageUrl.startsWith("http") ? imageUrl : `/api${imageUrl}`;
+    return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
   };
 
   if (loading || !isLoaded) {
