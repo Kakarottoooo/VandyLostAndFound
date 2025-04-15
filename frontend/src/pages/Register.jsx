@@ -21,10 +21,8 @@ const Register = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
-  // Determine API URL based on environment
-  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-    ? "http://localhost:3000"
-    : "https://vandy-lost-and-found.herokuapp.com";
+  // ✅ Use environment variable defined in `.env.production`
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -47,7 +45,7 @@ const Register = () => {
     console.log("Using API URL:", API_URL);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
@@ -61,15 +59,13 @@ const Register = () => {
       if (response.ok) {
         toast({
           title: "Registration Successful",
-          description: "Thanks! We've emailed you a verification code. Be sure to check your spam folder",
+          description: "Thanks! We've emailed you a verification code. Be sure to check your spam folder.",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
-                
-        navigate("/verify"); // Redirect to verification page
+        navigate("/verify");
       } else {
-        // Better error handling for existing user
         if (data.msg === 'User already exists') {
           toast({
             title: "Account Already Exists",
