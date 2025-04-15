@@ -50,6 +50,7 @@ const MapPage = () => {
   const [searchedLocation, setSearchedLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState(center);
   const [isSearching, setIsSearching] = useState(false);
+  const [refreshCounter, setRefreshCounter] = useState(0); // Add refresh counter
   
   // Modal control with useDisclosure hook
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -191,7 +192,42 @@ const MapPage = () => {
     setMapCenter(center);
   }, []);
 
-  // Add refresh items function
+  // Improved getImageUrl function with better handling and debugging
+  const getImageUrl = (imageUrl) => {
+    // If no image, return placeholder
+    if (!imageUrl) return placeholderImage;
+    
+    // If empty string, return placeholder
+    if (imageUrl === "") return placeholderImage;
+    
+    // If already a full URL (starts with http or https), use as is
+    if (imageUrl.startsWith("http")) return imageUrl;
+    
+    // Handle cloudinary URLs that might not start with http
+    if (imageUrl.includes("cloudinary")) return `https:${imageUrl.startsWith('//') ? '' : '//'}${imageUrl}`;
+    
+    // For relative paths, ensure correct path construction
+    // Strip any leading slash from imageUrl for consistent joining
+    const cleanImagePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
+    
+    // Ensure API_URL ends with a slash
+    const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`;
+    
+    // Construct the full URL
+    const fullUrl = `${baseUrl}${cleanImagePath}`;
+    
+    // Log for debugging
+    console.log('Image URL construction:', {
+      original: imageUrl,
+      cleaned: cleanImagePath,
+      baseUrl,
+      fullUrl
+    });
+    
+    return fullUrl;
+  };
+
+  // Add refresh items function with counter increment
   const refreshItems = useCallback(async () => {
     setLoading(true);
     try {
@@ -215,7 +251,19 @@ const MapPage = () => {
           return hasCoordinates;
         });
         
+        // Log items for debugging
+        console.log('Fetched items with coordinates:', itemsWithLocation);
+        itemsWithLocation.forEach(item => {
+          console.log(`Item ${item._id}:`, {
+            name: item.name,
+            imageUrl: item.image,
+            constructedImageUrl: getImageUrl(item.image),
+            coordinates: item.location?.coordinates
+          });
+        });
+        
         setItems(itemsWithLocation);
+        setRefreshCounter(prev => prev + 1); // Increment to trigger useEffect
         
         toast({
           title: "Map Refreshed",
@@ -256,6 +304,7 @@ const MapPage = () => {
     }
   }, [isLoaded, mapRef.current]);
 
+  // Updated useEffect with refreshCounter dependency
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -277,6 +326,17 @@ const MapPage = () => {
                                   typeof item.location.coordinates.lng === 'number';
             
             return hasCoordinates;
+          });
+          
+          // Log items for debugging
+          console.log('Fetched items with coordinates:', itemsWithLocation);
+          itemsWithLocation.forEach(item => {
+            console.log(`Item ${item._id}:`, {
+              name: item.name,
+              imageUrl: item.image,
+              constructedImageUrl: getImageUrl(item.image),
+              coordinates: item.location?.coordinates
+            });
           });
           
           setItems(itemsWithLocation);
@@ -308,7 +368,7 @@ const MapPage = () => {
     };
 
     fetchItems();
-  }, [toast, API_URL]);
+  }, [toast, API_URL, refreshCounter]); // Added refreshCounter dependency
 
   const handleMarkerClick = (item) => {
     // Center the map on the selected item
@@ -328,12 +388,6 @@ const MapPage = () => {
   const handleModalClose = () => {
     onClose();
     setSelectedItem(null);
-  };
-
-  // Process image URL
-  const getImageUrl = (imageUrl) => {
-    if (!imageUrl) return placeholderImage;
-    return imageUrl.startsWith("http") ? imageUrl : `${API_URL}${imageUrl}`;
   };
 
   if (loading || !isLoaded) {
@@ -494,6 +548,7 @@ const MapPage = () => {
                     objectFit: 'cover'
                   }}
                   onError={(e) => {
+                    console.log('Image load error for:', item.name);
                     e.target.src = placeholderImage;
                   }}
                 />
