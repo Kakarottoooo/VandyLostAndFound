@@ -20,7 +20,7 @@ import { GoogleMap, useJsApiLoader, OverlayView, Marker, StandaloneSearchBox } f
 import { FaSearch, FaTimesCircle } from 'react-icons/fa';
 
 // Fixed import path based on your file structure
-import ItemDetailModal from '../components/itemDetailModal';
+import ItemDetailModal from '../components/ItemDetailModal';
 
 // Define libraries array outside component to avoid recreation on each render
 const libraries = ['places'];
