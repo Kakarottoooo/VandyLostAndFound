@@ -46,6 +46,11 @@ const CATEGORIES = [
 ];
 
 const CreatePage = () => {
+  // Determine API URL based on environment
+  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "/api"  // Use relative path in development
+    : "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com/api"; // Use full URL in production
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [dateFound, setDateFound] = useState("");
@@ -196,8 +201,8 @@ const CreatePage = () => {
         hasImage: !!image
       });
       
-      // Create the item
-      const response = await fetch("/api/items", {
+      // Create the item - use the proper API URL
+      const response = await fetch(`${API_URL}/items`, {
         method: "POST",
         headers: {
           'Authorization': `Bearer ${token}`
