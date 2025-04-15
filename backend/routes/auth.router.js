@@ -49,50 +49,63 @@ router.post(
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
       
-      user = new User({ name, email, password: hashedPassword });
-
-      console.log("Creating email transport");
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.sendgrid.net',
-        port: 465,
-        secure: true,
-        auth: {
-          user: 'apikey', // Literally "apikey", not your email
-          pass: process.env.SENDGRID_API_KEY, // Your SendGrid API key
-        }
-      });
-
+      // Generate verification code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       console.log("Generated verification code for", email);
-
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'Verify your email address',
-        text: `Hello ${name},\n\nPlease verify your email address by entering the following six-digit code:\n\n${verificationCode}\n\nThank you!`,
-      };
-
-      console.log("Attempting to send verification email to", email);
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error("Email sending error:", error);
-          return res.status(500).json({ msg: "Couldn't send verification email" });
-        }
-        console.log("Email sent successfully:", info);
-      });
-
+      
+      // Hash verification code
       const salt2 = await bcrypt.genSalt(10);
       const hashedVerificationCode = await bcrypt.hash(verificationCode, salt2);
-      user.verificationCode = hashedVerificationCode;
-      user.verificationCodeExpiration= Date.now() + 3600000; // 1 hour from now
+      
+      // Create new user
+      user = new User({ 
+        name, 
+        email, 
+        password: hashedPassword,
+        verificationCode: hashedVerificationCode,
+        verificationCodeExpiration: Date.now() + 3600000 // 1 hour from now
+      });
 
+      // Save user to database first
       console.log("Saving new user to database");
       await user.save();
       console.log("User saved successfully");
-      return res.status(200).json({ msg: 'Registration successful. Please check your email for the verification code.' });
+      
+      // Try to send email but don't let it block the response
+      try {
+        console.log("Creating email transport");
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.sendgrid.net',
+          port: 465,
+          secure: true,
+          auth: {
+            user: 'apikey', // Literally "apikey", not your email
+            pass: process.env.SENDGRID_API_KEY, // Your SendGrid API key
+          }
+        });
+
+        const mailOptions = {
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject: 'Verify your email address',
+          text: `Hello ${name},\n\nPlease verify your email address by entering the following six-digit code:\n\n${verificationCode}\n\nThank you!`,
+        };
+
+        console.log("Attempting to send verification email to", email);
+        await transporter.sendMail(mailOptions);
+        console.log("Email sent successfully");
+      } catch (emailError) {
+        // Just log the error but continue with the registration
+        console.error("Email sending error:", emailError);
+      }
+
+      // Return success response once at the end
+      return res.status(200).json({ 
+        msg: 'Registration successful. Please check your email for the verification code.'
+      });
     } catch (err) {
       console.error("Registration error:", err.message);
-      res.status(500).send('Server Error');
+      return res.status(500).json({ error: 'Server Error' });
     }
   }
 );
