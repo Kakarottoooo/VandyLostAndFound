@@ -37,6 +37,11 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
   const [isFollowingLoading, setIsFollowingLoading] = useState(false);
   const { isOpen: isContactOpen, onOpen: openContact, onClose: closeContact } = useDisclosure();
 
+  // Determine API URL based on environment
+  const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "/api"  // Use relative path in development
+    : "https://vandy-lost-and-found-2ff42902dec4.herokuapp.com/api"; // Use full URL in production
+
   // Get functions from the combined store
   const {
     isItemFollowed,
@@ -142,7 +147,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
     
     // Local /uploads/ path
     if (imageUrl.startsWith("/uploads")) {
-      return `/api${imageUrl}`; 
+      return `${API_URL}${imageUrl}`; 
     }
     
     // Cloudinary path without http
@@ -255,7 +260,7 @@ const ItemDetailModal = ({ isOpen, onClose, item }) => {
         throw new Error("Cannot determine recipient ID");
       }
       
-      const response = await fetch('/api/messages', {
+      const response = await fetch(`${API_URL}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
