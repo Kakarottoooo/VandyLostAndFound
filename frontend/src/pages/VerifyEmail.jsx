@@ -26,8 +26,8 @@ const Verify = () => {
             const response = await fetch(`${API_URL}/api/auth/verify-email`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, verificationCode: code }),
-                credentials: 'include',
+                body: JSON.stringify({ email, verificationCode: code })
+                // Removed credentials: 'include'
             });
 
             console.log("Response status:", response.status);

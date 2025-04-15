@@ -21,34 +21,12 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
-// ✅ Flexible CORS for both local and deployed frontend
-const allowedOrigins = [
-  "http://localhost:5173", // Vite local dev
-  "http://localhost:5174", // Alternative Vite port
-  "http://127.0.0.1:5173", // Local IP variant
-  "http://127.0.0.1:5174", // Local IP variant
-  "https://vandyfind.netlify.app", // Netlify site
-  "https://profile-3--vandyfind.netlify.app", // Your Netlify site
-  "https://fluffy-fudge-c9f1af.netlify.app" // Your new Netlify site
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl requests)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.log("Blocked by CORS:", origin);
-        callback(null, true); // Temporarily allow all origins for debugging
-        // callback(new Error("Not allowed by CORS")); // Enable this line later
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  })
-);
+// Simplify CORS - Allow all origins for now (you can restrict this later)
+app.use(cors({
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Body parsers
 app.use(express.json());
@@ -86,10 +64,20 @@ app.get("/", (req, res) => {
   res.send("🔗 Welcome to VandyLostAndFound API");
 });
 
-// ✅ Global Error Handling
+// More detailed error handling
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: "Something went wrong!" });
+  console.error('Error details:', err);
+  console.error('Stack trace:', err.stack);
+  
+  // Log request info for debugging
+  console.error('Request path:', req.path);
+  console.error('Request method:', req.method);
+  console.error('Request headers:', req.headers);
+  
+  res.status(500).json({ 
+    error: "Something went wrong!",
+    message: err.message || 'Unknown error' 
+  });
 });
 
 // ✅ Start Server
@@ -99,7 +87,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
     console.log(`📂 API available at http://localhost:${PORT}/api`);
-    console.log(`🌐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+    console.log('🌐 CORS enabled for all origins');
   });
 }
 
