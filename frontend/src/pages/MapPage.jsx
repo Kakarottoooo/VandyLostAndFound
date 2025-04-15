@@ -192,39 +192,40 @@ const MapPage = () => {
     setMapCenter(center);
   }, []);
 
-  // Improved getImageUrl function with better handling and debugging
   const getImageUrl = (imageUrl) => {
-    // If no image, return placeholder
-    if (!imageUrl) return placeholderImage;
-    
-    // If empty string, return placeholder
-    if (imageUrl === "") return placeholderImage;
-    
-    // If already a full URL (starts with http or https), use as is
-    if (imageUrl.startsWith("http")) return imageUrl;
-    
-    // Handle cloudinary URLs that might not start with http
-    if (imageUrl.includes("cloudinary")) return `https:${imageUrl.startsWith('//') ? '' : '//'}${imageUrl}`;
-    
-    // For relative paths, ensure correct path construction
-    // Strip any leading slash from imageUrl for consistent joining
-    const cleanImagePath = imageUrl.startsWith('/') ? imageUrl.substring(1) : imageUrl;
-    
-    // Ensure API_URL ends with a slash
-    const baseUrl = API_URL.endsWith('/') ? API_URL : `${API_URL}/`;
-    
-    // Construct the full URL
-    const fullUrl = `${baseUrl}${cleanImagePath}`;
-    
     // Log for debugging
-    console.log('Image URL construction:', {
-      original: imageUrl,
-      cleaned: cleanImagePath,
-      baseUrl,
-      fullUrl
-    });
+    console.log("Processing image URL:", imageUrl);
     
-    return fullUrl;
+    // Always return the placeholder for any potential issue to avoid 404s
+    try {
+      // If no image or empty string, return placeholder
+      if (!imageUrl || imageUrl === "") {
+        console.log("No image URL provided, using placeholder");
+        return placeholderImage;
+      }
+      
+      // If it's already a complete Cloudinary URL (which most of your images seem to be)
+      if (imageUrl.includes('cloudinary.com') || imageUrl.startsWith('http')) {
+        console.log("Using direct image URL:", imageUrl);
+        return imageUrl;
+      }
+      
+      // For relative paths, we need to be careful about how we construct the URL
+      // First, check if it's a path starting with /uploads
+      if (imageUrl.includes('/uploads/') || imageUrl.startsWith('/uploads/')) {
+        const cleanPath = imageUrl.replace(/^\/+/, ''); // Remove leading slashes
+        const fullUrl = `${API_URL}/${cleanPath}`;
+        console.log("Constructed URL for uploaded file:", fullUrl);
+        return fullUrl;
+      }
+      
+      // If we can't determine the proper URL construction, use placeholder
+      console.log("Could not determine proper URL format, using placeholder");
+      return placeholderImage;
+    } catch (error) {
+      console.error('Error processing image URL:', error);
+      return placeholderImage;
+    }
   };
 
   // Add refresh items function with counter increment
