@@ -11,7 +11,7 @@ import { messageRouter } from "./routes/message.router.js";
 import { upload, cloudinary } from "./config/cloudinaryConfig.js";
 dotenv.config({ path: "../.env" });
 
-// Check JWT_SECRET existence
+// ✅ JWT Config Check
 console.log("JWT_SECRET Loaded:", process.env.JWT_SECRET ? "✅ Exists" : "❌ MISSING");
 
 if (!process.env.JWT_SECRET) {
@@ -19,20 +19,30 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
+// ✅ Cloudinary Config Check
+console.log("📦 Cloudinary Config Check:");
+console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME || "❌ MISSING");
+console.log("API_KEY exists:", !!process.env.CLOUDINARY_API_KEY);
+console.log("API_SECRET exists:", !!process.env.CLOUDINARY_API_SECRET);
+
+cloudinary.api.ping()
+  .then(result => console.log("☁️ Cloudinary Ping Successful:", result))
+  .catch(error => console.error("❌ Cloudinary Ping Failed:", error));
+
 const app = express();
 
-// Simplify CORS - Allow all origins for now (you can restrict this later)
+// ✅ CORS Middleware - Allow all origins for now
 app.use(cors({
-  origin: '*', // Allow all origins
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Body parsers
+// ✅ Body Parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Debugging middleware for all requests
+// ✅ Logging Middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.path} - Origin: ${req.headers.origin}`);
   next();
@@ -54,33 +64,31 @@ app.use("/api/uploads", express.static("uploads"));
 app.use("/uploads", express.static("uploads"));
 app.use("/api/messages", messageRouter);
 
-// ✅ Protected Route Example
+// ✅ Example Protected Route
 app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({ msg: "Access granted to protected route!", user: req.user });
 });
 
-// ✅ Default Route
+// ✅ Root Route
 app.get("/", (req, res) => {
   res.send("🔗 Welcome to VandyLostAndFound API");
 });
 
-// More detailed error handling
+// ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Error details:', err);
   console.error('Stack trace:', err.stack);
-  
-  // Log request info for debugging
   console.error('Request path:', req.path);
   console.error('Request method:', req.method);
   console.error('Request headers:', req.headers);
-  
+
   res.status(500).json({ 
     error: "Something went wrong!",
     message: err.message || 'Unknown error' 
   });
 });
 
-// ✅ Start Server
+// ✅ Server Listen
 const PORT = process.env.PORT || 3000;
 
 if (process.env.NODE_ENV !== 'test') {
@@ -91,5 +99,5 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-// Export app for testing
+// Export for testing
 export default app;
